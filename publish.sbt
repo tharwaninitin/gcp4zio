@@ -12,7 +12,7 @@ ThisBuild / organization         := "com.github.tharwaninitin"
 ThisBuild / organizationName     := "github"
 ThisBuild / organizationHomepage := Some(url(s"https://github.com/tharwaninitin/${name.value}"))
 ThisBuild / homepage             := Some(url(s"https://github.com/tharwaninitin/${name.value}"))
-ThisBuild / description          := "Template Library in Scala"
+ThisBuild / description          := "Library to work with GCP services in Scala"
 ThisBuild / scmInfo := Some(
   ScmInfo(
     url(s"https://github.com/tharwaninitin/${name.value}"),

@@ -2,9 +2,9 @@ import Dependencies._
 import ScalaCompileOptions._
 import Versions._
 
-lazy val template = (project in file("."))
+lazy val gcp4s = (project in file("."))
   .settings(
-    name         := "template",
+    name         := "gcp4s",
     version      := "0.1.0",
     scalaVersion := scala212,
     libraryDependencies ++= core ++ testLibs,
