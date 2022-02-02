@@ -1,0 +1,15 @@
+*.class
+*.log
+.idea
+.metals
+.bloop
+.vscode
+target
+project/.bloop
+project/project
+project/target
+project/metals.sbt
+out
+.idea_modules
+.bsp
+.env
