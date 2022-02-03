@@ -1,24 +1,27 @@
 import utils.ApplicationLogger
-import zio.{Has, Task}
+import zio.blocking.Blocking
+import zio.{Has, RIO, Task}
 
 package object gcp4zio extends ApplicationLogger {
+  type BlockingTask[A] = RIO[Blocking, A]
 
   type GCSEnv   = Has[GCSApi.Service[Task]]
   type BQEnv    = Has[BQApi.Service[Task]]
-  type DPEnv    = Has[DPApi.Service[Task]]
+  type DPEnv    = Has[DPApi.Service]
   type DPJobEnv = Has[DPJobApi.Service[Task]]
 
   case class BQLoadException(msg: String) extends RuntimeException(msg)
 
   case class DataprocProperties(
       bucket_name: String,
+      internal_ip_only: Boolean = true,
       subnet_uri: Option[String] = None,
       network_tags: List[String] = List.empty,
       service_account: Option[String] = None,
       idle_deletion_duration_sec: Option[Long] = Some(1800L),
       master_machine_type_uri: String = "n1-standard-4",
       worker_machine_type_uri: String = "n1-standard-4",
-      image_version: String = "1.5.4-debian10",
+      image_version: String = "1.5-debian10",
       boot_disk_type: String = "pd-ssd",
       master_boot_disk_size_gb: Int = 400,
       worker_boot_disk_size_gb: Int = 200,
@@ -43,17 +46,5 @@ package object gcp4zio extends ApplicationLogger {
     case object BQ      extends BQInputType
     case object PARQUET extends BQInputType
     case object ORC     extends BQInputType
-  }
-
-  sealed trait FSType
-  object FSType {
-    case object LOCAL extends FSType
-    case object GCS   extends FSType
-  }
-
-  sealed trait Location
-  object Location {
-    case class LOCAL(path: String)               extends Location
-    case class GCS(bucket: String, path: String) extends Location
   }
 }

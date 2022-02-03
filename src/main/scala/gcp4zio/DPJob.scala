@@ -78,6 +78,5 @@ case class DPJob(client: JobControllerClient) extends DPJobApi.Service[Task] {
 }
 
 object DPJob {
-  def live(endpoint: String, path: Option[String] = None): TaskLayer[DPJobEnv] =
-    Managed.fromAutoCloseable(Task(DPJobClient(endpoint, path))).map(dp => DPJob(dp)).toLayer
+  def live(endpoint: String): TaskLayer[DPJobEnv] = Managed.fromAutoCloseable(DPJobClient(endpoint)).map(dp => DPJob(dp)).toLayer
 }

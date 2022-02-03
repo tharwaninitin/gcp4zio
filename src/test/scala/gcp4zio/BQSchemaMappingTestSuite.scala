@@ -37,7 +37,7 @@ object BQSchemaMappingTestSuite {
     ("is_active", LegacySQLTypeName.BOOLEAN)
   )
 
-  val spec: ZSpec[environment.TestEnvironment, Any] = suite("getBqSchema Tests")(
+  val spec: ZSpec[environment.TestEnvironment, Any] = suite("Encoder Tests")(
     test("Encoder[Ratings1] should return list of field names and field types") {
       val schema: Option[Schema] = Encoder[Ratings1]
       assertTrue(schema.get.getFields.asScala.map(x => (x.getName, x.getType)) == op)

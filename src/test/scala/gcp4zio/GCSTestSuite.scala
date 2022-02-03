@@ -4,15 +4,15 @@ import zio.ZIO
 import zio.test.Assertion.equalTo
 import zio.test._
 
-object GCSTestSuite extends GcpTestHelper {
+object GCSTestSuite extends TestHelper {
   val spec: ZSpec[environment.TestEnvironment with GCSEnv, Any] =
     suite("GCS Steps")(
       testM("Execute GCSPut PARQUET step") {
-        val step = GCSApi.putObject(gcs_bucket, "temp/ratings.parquet", file)
+        val step = GCSApi.putObject(gcs_bucket, "temp/ratings.parquet", file_path_parquet)
         assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       },
       testM("Execute GCSPut CSV step") {
-        val step = GCSApi.putObject(gcs_bucket, "temp/ratings.csv", file_csv)
+        val step = GCSApi.putObject(gcs_bucket, "temp/ratings.csv", file_path_csv)
         assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       },
       testM("Execute GCSCopy step LOCAL to GCS") {

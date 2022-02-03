@@ -2,11 +2,12 @@ package gcp4zio
 
 import com.google.cloud.dataproc.v1.Cluster
 import zio.ZIO
+import zio.blocking.Blocking
 
 object DPApi {
-  trait Service[F[_]] {
-    def createDataproc(clusterName: String, project: String, region: String, props: DataprocProperties): F[Cluster]
-    def deleteDataproc(clusterName: String, project: String, region: String): F[Unit]
+  trait Service {
+    def createDataproc(clusterName: String, project: String, region: String, props: DataprocProperties): BlockingTask[Cluster]
+    def deleteDataproc(clusterName: String, project: String, region: String): BlockingTask[Unit]
   }
 
   def createDataproc(
@@ -14,8 +15,8 @@ object DPApi {
       project: String,
       region: String,
       props: DataprocProperties
-  ): ZIO[DPEnv, Throwable, Cluster] =
+  ): ZIO[DPEnv with Blocking, Throwable, Cluster] =
     ZIO.accessM(_.get.createDataproc(clusterName, project, region, props))
-  def deleteDataproc(clusterName: String, project: String, region: String): ZIO[DPEnv, Throwable, Unit] =
+  def deleteDataproc(clusterName: String, project: String, region: String): ZIO[DPEnv with Blocking, Throwable, Unit] =
     ZIO.accessM(_.get.deleteDataproc(clusterName, project, region))
 }

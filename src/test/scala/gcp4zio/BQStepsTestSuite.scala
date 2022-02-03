@@ -7,7 +7,7 @@ import zio.ZIO
 import zio.test.Assertion.equalTo
 import zio.test._
 
-object BQStepsTestSuite extends GcpTestHelper {
+object BQStepsTestSuite extends TestHelper {
   case class RatingCSV(userId: Long, movieId: Long, rating: Double, timestamp: Long)
 
   // STEP 1: Define step
@@ -19,39 +19,35 @@ object BQStepsTestSuite extends GcpTestHelper {
 
   val spec: ZSpec[environment.TestEnvironment with BQEnv, Any] = suite("BQ Steps")(
     testM("Execute BQLoad PARQUET step") {
-      val step = BQApi
-        .loadIntoBQTable(input_file_parquet, PARQUET, sys.env.get("GCP_PROJECT_ID"), output_dataset, output_table)
+      val step = BQApi.loadTable(input_file_parquet, PARQUET, gcp_project_id, output_dataset, output_table)
       assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
     testM("Execute BQLoad CSV step") {
       val schema: Option[Schema] = Encoder[RatingCSV]
-      val step =
-        BQApi.loadIntoBQTable(input_file_csv, CSV(), sys.env.get("GCP_PROJECT_ID"), output_dataset, output_table, schema = schema)
+      val step = BQApi.loadTable(input_file_csv, CSV(), gcp_project_id, output_dataset, output_table, schema = schema)
       assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
     testM("Execute BQExport CSV step") {
-      val step = BQApi
-        .exportFromBQTable(
-          sys.env.get("GCP_PROJECT_ID"),
-          output_dataset,
-          output_table,
-          bq_export_dest_path,
-          Some("sample.csv"),
-          CSV()
-        )
+      val step = BQApi.exportTable(
+        output_dataset,
+        output_table,
+        gcp_project_id,
+        bq_export_dest_path,
+        Some("sample.csv"),
+        CSV()
+      )
       assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
     testM("Execute BQExport PARQUET step") {
-      val step = BQApi
-        .exportFromBQTable(
-          sys.env.get("GCP_PROJECT_ID"),
-          output_dataset,
-          output_table,
-          bq_export_dest_path,
-          Some("sample.parquet"),
-          PARQUET,
-          "snappy"
-        )
+      val step = BQApi.exportTable(
+        output_dataset,
+        output_table,
+        gcp_project_id,
+        bq_export_dest_path,
+        Some("sample.parquet"),
+        PARQUET,
+        "snappy"
+      )
       assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     }
   ) @@ TestAspect.sequential

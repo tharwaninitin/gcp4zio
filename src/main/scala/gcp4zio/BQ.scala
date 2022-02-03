@@ -49,7 +49,7 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
     }
   }
 
-  def getDataFromBQ(query: String): Task[Iterable[FieldValueList]] = Task {
+  def getData(query: String): Task[Iterable[FieldValueList]] = Task {
     val queryConfig: QueryJobConfiguration = QueryJobConfiguration
       .newBuilder(query)
       .setUseLegacySql(false)
@@ -65,13 +65,11 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
     result.iterateAll().asScala
   }
 
-  def loadIntoBQFromLocalFile(
+  def loadTableFromLocalFile(
       source_locations: Either[String, Seq[(String, String)]],
       source_format: BQInputType,
       destination_dataset: String,
-      destination_table: String,
-      write_disposition: JobInfo.WriteDisposition,
-      create_disposition: JobInfo.CreateDisposition
+      destination_table: String
   ): Task[Unit] = Task {
     if (source_locations.isRight) {
       logger.info(s"No of BQ partitions: ${source_locations.getOrElse(Seq.empty).length}")
@@ -79,7 +77,7 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
         val table_partition = destination_table + "$" + partition
         val full_table_name = destination_dataset + "." + table_partition
         val bq_load_cmd =
-          s"""bq load --replace  --time_partitioning_field date --require_partition_filter=false --source_format=${source_format.toString} $full_table_name $src_path""".stripMargin
+          s"""bq load --replace --time_partitioning_field date --require_partition_filter=false --source_format=${source_format.toString} $full_table_name $src_path""".stripMargin
         logger.info(s"Loading data from path: $src_path")
         logger.info(s"Destination table: $full_table_name")
         logger.info(s"BQ Load command is: $bq_load_cmd")
@@ -102,7 +100,7 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
     }
   }
 
-  override def loadIntoPartitionedBQTable(
+  override def loadPartitionedTable(
       source_paths_partitions: Seq[(String, String)],
       source_format: BQInputType,
       destination_project: Option[String],
@@ -117,7 +115,7 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
     ZIO
       .foreachParN(parallelism)(source_paths_partitions) { case (src_path, partition) =>
         val table_partition = destination_table + "$" + partition
-        loadIntoBQTable(
+        loadTable(
           src_path,
           source_format,
           destination_project,
@@ -130,7 +128,7 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
       .map(x => x.flatten.toMap)
   }
 
-  override def loadIntoBQTable(
+  override def loadTable(
       source_path: String,
       source_format: BQInputType,
       destination_project: Option[String],
@@ -140,7 +138,6 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
       create_disposition: JobInfo.CreateDisposition,
       schema: Option[Schema]
   ): Task[Map[String, Long]] = Task {
-    // Create Output BQ table instance
     val tableId = destination_project match {
       case Some(project) => TableId.of(project, destination_dataset, destination_table)
       case None          => TableId.of(destination_dataset, destination_table)
@@ -199,10 +196,10 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
     Map(destination_table -> destinationTable.getNumRows)
   }
 
-  override def exportFromBQTable(
-      source_project: Option[String],
+  override def exportTable(
       source_dataset: String,
       source_table: String,
+      source_project: Option[String],
       destination_path: String,
       destination_file_name: Option[String],
       destination_format: BQInputType,
