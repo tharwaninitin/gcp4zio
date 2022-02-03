@@ -1,13 +1,7 @@
-import com.google.cloud.bigquery.{Field, LegacySQLTypeName, Schema}
-import org.slf4j.{Logger, LoggerFactory}
-import zio.{Has, Tag, Task}
-import java.util
-import scala.jdk.CollectionConverters._
-import scala.util.Try
+import utils.ApplicationLogger
+import zio.{Has, Task}
 
-package object gcp4zio {
-
-  lazy val logger: Logger = LoggerFactory.getLogger(getClass.getName)
+package object gcp4zio extends ApplicationLogger {
 
   type GCSEnv   = Has[GCSApi.Service[Task]]
   type BQEnv    = Has[BQApi.Service[Task]]
@@ -62,31 +56,4 @@ package object gcp4zio {
     case class LOCAL(path: String)               extends Location
     case class GCS(bucket: String, path: String) extends Location
   }
-
-  def getBQType(sp_type: String): LegacySQLTypeName = sp_type match {
-    case "string"         => LegacySQLTypeName.STRING
-    case "int"            => LegacySQLTypeName.INTEGER
-    case "long"           => LegacySQLTypeName.INTEGER
-    case "double"         => LegacySQLTypeName.FLOAT
-    case "java.sql.Date"  => LegacySQLTypeName.DATE
-    case "java.util.Date" => LegacySQLTypeName.DATE
-    case "boolean"        => LegacySQLTypeName.BOOLEAN
-    case _                => LegacySQLTypeName.STRING
-
-  }
-
-  def getFields[T: Tag]: Array[(String, String)] =
-    implicitly[Tag[T]].closestClass.getDeclaredFields.map(f => (f.getName, f.getType.getName))
-
-  def getBqSchema[T: Tag]: Option[Schema] =
-    Try {
-      val fields   = new util.ArrayList[Field]
-      val ccFields = getFields[T]
-      if (ccFields.isEmpty)
-        throw new RuntimeException("Schema not provided")
-      ccFields.map(x => fields.add(Field.of(x._1, getBQType(x._2))))
-      val s = Schema.of(fields)
-      logger.info(s"Schema provided: ${s.getFields.asScala.map(x => (x.getName, x.getType))}")
-      s
-    }.toOption
 }

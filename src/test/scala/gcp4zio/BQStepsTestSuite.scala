@@ -2,6 +2,7 @@ package gcp4zio
 
 import com.google.cloud.bigquery.Schema
 import gcp4zio.BQInputType.{CSV, PARQUET}
+import utils.Encoder
 import zio.ZIO
 import zio.test.Assertion.equalTo
 import zio.test._
@@ -23,7 +24,7 @@ object BQStepsTestSuite extends GcpTestHelper {
       assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
     testM("Execute BQLoad CSV step") {
-      val schema: Option[Schema] = getBqSchema[RatingCSV]
+      val schema: Option[Schema] = Encoder[RatingCSV]
       val step =
         BQApi.loadIntoBQTable(input_file_csv, CSV(), sys.env.get("GCP_PROJECT_ID"), output_dataset, output_table, schema = schema)
       assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
