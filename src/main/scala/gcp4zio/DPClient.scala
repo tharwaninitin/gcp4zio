@@ -1,37 +1,36 @@
-package gcp4s
+package gcp4zio
 
 import com.google.api.gax.core.FixedCredentialsProvider
 import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
-import com.google.cloud.dataproc.v1.{JobControllerClient, JobControllerSettings}
+import com.google.cloud.dataproc.v1.{ClusterControllerClient, ClusterControllerSettings}
 import java.io.FileInputStream
 
-object DPJobClient {
+object DPClient {
 
-  private def getDPJob(endpoint: String, path: String): JobControllerClient = {
+  private def getDP(path: String, endpoint: String): ClusterControllerClient = {
     val credentials: GoogleCredentials = ServiceAccountCredentials.fromStream(new FileInputStream(path))
-    val jcs = JobControllerSettings
-      .newBuilder()
+    val ccs = ClusterControllerSettings.newBuilder
       .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
       .setEndpoint(endpoint)
-      .build()
-    JobControllerClient.create(jcs)
+      .build
+    ClusterControllerClient.create(ccs)
   }
 
-  def apply(endpoint: String, path: Option[String]): JobControllerClient = {
+  def apply(endpoint: String, path: Option[String]): ClusterControllerClient = {
     val env_path: String = sys.env.getOrElse("GOOGLE_APPLICATION_CREDENTIALS", "NOT_SET_IN_ENV")
 
     path match {
       case Some(p) =>
         logger.info("Using GCP credentials from values passed in function")
-        getDPJob(endpoint, p)
+        getDP(p, endpoint)
       case None =>
         if (env_path == "NOT_SET_IN_ENV") {
           logger.info("Using GCP credentials from local sdk")
-          val jcs = JobControllerSettings.newBuilder().setEndpoint(endpoint).build()
-          JobControllerClient.create(jcs)
+          val ccs = ClusterControllerSettings.newBuilder.setEndpoint(endpoint).build
+          ClusterControllerClient.create(ccs)
         } else {
           logger.info("Using GCP credentials from environment variable GOOGLE_APPLICATION_CREDENTIALS")
-          getDPJob(endpoint, env_path)
+          getDP(env_path, endpoint)
         }
     }
   }

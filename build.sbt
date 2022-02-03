@@ -2,9 +2,9 @@ import Dependencies._
 import ScalaCompileOptions._
 import Versions._
 
-lazy val gcp4s = (project in file("."))
+lazy val gcp4zio = (project in file("."))
   .settings(
-    name         := "gcp4s",
+    name         := "gcp4zio",
     version      := "0.1.0",
     scalaVersion := scala212,
     libraryDependencies ++= core ++ testLibs,

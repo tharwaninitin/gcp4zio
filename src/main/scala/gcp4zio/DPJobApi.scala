@@ -1,4 +1,4 @@
-package gcp4s
+package gcp4zio
 
 import zio.ZIO
 

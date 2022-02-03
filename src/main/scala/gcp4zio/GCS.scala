@@ -1,4 +1,4 @@
-package gcp4s
+package gcp4zio
 
 import com.google.api.gax.paging.Page
 import com.google.cloud.storage.Storage.BlobListOption

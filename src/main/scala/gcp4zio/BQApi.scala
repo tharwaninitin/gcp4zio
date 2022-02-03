@@ -1,4 +1,4 @@
-package gcp4s
+package gcp4zio
 
 import com.google.cloud.bigquery.{FieldValueList, JobInfo, Schema}
 import zio.ZIO
@@ -74,8 +74,8 @@ object BQApi {
       destination_project: Option[String],
       destination_dataset: String,
       destination_table: String,
-      write_disposition: JobInfo.WriteDisposition,
-      create_disposition: JobInfo.CreateDisposition,
+      write_disposition: JobInfo.WriteDisposition = JobInfo.WriteDisposition.WRITE_TRUNCATE,
+      create_disposition: JobInfo.CreateDisposition = JobInfo.CreateDisposition.CREATE_NEVER,
       schema: Option[Schema] = None
   ): ZIO[BQEnv, Throwable, Map[String, Long]] =
     ZIO.accessM(

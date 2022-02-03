@@ -1,4 +1,4 @@
-package gcp4s
+package gcp4zio
 
 import com.google.cloud.dataproc.v1._
 import com.google.protobuf.Duration

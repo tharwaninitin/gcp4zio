@@ -5,7 +5,7 @@ import java.util
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
-package object gcp4s {
+package object gcp4zio {
 
   lazy val logger: Logger = LoggerFactory.getLogger(getClass.getName)
 

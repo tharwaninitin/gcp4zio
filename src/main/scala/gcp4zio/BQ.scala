@@ -1,4 +1,4 @@
-package gcp4s
+package gcp4zio
 
 import java.util.UUID
 import com.google.cloud.bigquery.{BigQuery, CsvOptions, ExtractJobConfiguration, FieldValueList, FormatOptions, Job, JobConfiguration, JobId, JobInfo, LoadJobConfiguration, QueryJobConfiguration, Schema, StandardTableDefinition, TableId, TableResult}
