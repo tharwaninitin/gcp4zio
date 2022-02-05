@@ -5,7 +5,7 @@ import zio.{Has, RIO, Task}
 package object gcp4zio extends ApplicationLogger {
   type BlockingTask[A] = RIO[Blocking, A]
 
-  type GCSEnv   = Has[GCSApi.Service[Task]]
+  type GCSEnv   = Has[GCSApi.Service]
   type BQEnv    = Has[BQApi.Service[Task]]
   type DPEnv    = Has[DPApi.Service]
   type DPJobEnv = Has[DPJobApi.Service[Task]]

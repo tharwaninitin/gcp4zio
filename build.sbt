@@ -5,7 +5,7 @@ import Versions._
 lazy val gcp4zio = (project in file("."))
   .settings(
     name         := "gcp4zio",
-    version      := "0.1.0",
+    version      := Gcp4ZioVersion,
     scalaVersion := scala212,
     libraryDependencies ++= core ++ testLibs,
     crossScalaVersions := allScalaVersions,

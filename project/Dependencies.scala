@@ -5,6 +5,7 @@ object Dependencies {
 
   lazy val core = List(
     "dev.zio"                %% "zio"                     % ZioVersion,
+    "dev.zio"                %% "zio-streams"             % ZioVersion,
     "org.scala-lang.modules" %% "scala-collection-compat" % ScalaJavaCollectionCompat,
     "com.google.cloud"        % "google-cloud-bigquery"   % GcpBqVersion,
     "com.google.cloud"        % "google-cloud-dataproc"   % GcpDpVersion,
