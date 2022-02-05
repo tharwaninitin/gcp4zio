@@ -1,14 +1,19 @@
 import utils.ApplicationLogger
 import zio.blocking.Blocking
+import zio.stream.{ZSink, ZStream}
 import zio.{Has, RIO, Task}
+import java.io.IOException
 
 package object gcp4zio extends ApplicationLogger {
-  type BlockingTask[A] = RIO[Blocking, A]
-
-  type GCSEnv   = Has[GCSApi.Service]
-  type BQEnv    = Has[BQApi.Service[Task]]
-  type DPEnv    = Has[DPApi.Service]
-  type DPJobEnv = Has[DPJobApi.Service[Task]]
+  type BlockingTask[A]  = RIO[Blocking, A]
+  type GCSStream        = ZStream[Blocking, IOException, Byte]
+  type GCSStreamWithEnv = ZStream[GCSEnv with Blocking, IOException, Byte]
+  type GCSSink          = ZSink[Blocking, IOException, Byte, Byte, Long]
+  type GCSSinkWithEnv   = ZSink[GCSEnv with Blocking, IOException, Byte, Byte, Long]
+  type GCSEnv           = Has[GCSApi.Service]
+  type BQEnv            = Has[BQApi.Service[Task]]
+  type DPEnv            = Has[DPApi.Service]
+  type DPJobEnv         = Has[DPJobApi.Service[Task]]
 
   case class BQLoadException(msg: String) extends RuntimeException(msg)
 

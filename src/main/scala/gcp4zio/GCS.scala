@@ -1,12 +1,11 @@
 package gcp4zio
 
 import com.google.api.gax.paging.Page
-import com.google.cloud.storage.Storage.BlobListOption
+import com.google.cloud.storage.Storage.{BlobListOption, BlobTargetOption, BlobWriteOption}
 import com.google.cloud.storage.{Blob, BlobId, BlobInfo, Storage}
-import zio.blocking.Blocking
-import zio.stream.ZStream
+import zio.stream.{ZSink, ZStream}
 import zio.{Layer, Managed, Task, ZIO}
-import java.io.InputStream
+import java.io.{IOException, InputStream, OutputStream}
 import java.nio.channels.Channels
 import java.nio.file.{FileSystems, Files, Path, Paths}
 import scala.jdk.CollectionConverters._
@@ -45,17 +44,30 @@ case class GCS(client: Storage) extends GCSApi.Service {
       }
   }
 
-  override def putObject(bucket: String, prefix: String, file: Path): Task[Blob] = Task {
+  override def putObject(bucket: String, prefix: String, file: Path, options: List[BlobTargetOption]): Task[Blob] = Task {
     val blobId   = BlobId.of(bucket, prefix)
     val blobInfo = BlobInfo.newBuilder(blobId).build
     logger.info(s"Copying object from local fs $file to gs://$bucket/$prefix")
-    client.create(blobInfo, Files.readAllBytes(file))
+    client.create(blobInfo, Files.readAllBytes(file), options: _*)
   }
 
   override def putObject(bucket: String, prefix: String, file: String): Task[Blob] = for {
     path <- Task(Paths.get(file))
-    blob <- putObject(bucket, prefix, path)
+    blob <- putObject(bucket, prefix, path, List.empty)
   } yield blob
+
+  override def putObject(bucket: String, prefix: String, options: List[BlobWriteOption]): GCSSink = {
+    val os: Managed[IOException, OutputStream] = Managed
+      .fromAutoCloseable {
+        Task {
+          val blobId   = BlobId.of(bucket, prefix)
+          val blobInfo = BlobInfo.newBuilder(blobId).build
+          Channels.newOutputStream(client.writer(blobInfo, options: _*))
+        }
+      }
+      .refineOrDie { case e: IOException => e }
+    ZSink.fromOutputStreamManaged(os)
+  }
 
   override def getObject(bucket: String, prefix: String, file: Path): Task[Unit] = Task {
     val blobId = BlobId.of(bucket, prefix)
@@ -69,19 +81,21 @@ case class GCS(client: Storage) extends GCSApi.Service {
     _    <- getObject(bucket, prefix, path)
   } yield ()
 
-  override def getObject(bucket: String, prefix: String, chunkSize: Int): ZStream[Blocking, Throwable, Byte] = {
-    val is: Managed[Throwable, InputStream] = Managed.fromAutoCloseable {
-      Task {
-        val blobId = BlobId.of(bucket, prefix)
-        val blob   = client.get(blobId)
-        Channels.newInputStream {
-          val reader = blob.reader()
-          reader.setChunkSize(chunkSize)
-          reader
+  override def getObject(bucket: String, prefix: String, chunkSize: Int): GCSStream = {
+    val is: Managed[IOException, InputStream] = Managed
+      .fromAutoCloseable {
+        Task {
+          val blobId = BlobId.of(bucket, prefix)
+          val blob   = client.get(blobId)
+          Channels.newInputStream {
+            val reader = blob.reader()
+            reader.setChunkSize(chunkSize)
+            reader
+          }
         }
       }
-    }
-    ZStream.managed(is).flatMap(ZStream.fromInputStream(_, chunkSize))
+      .refineOrDie { case e: IOException => e }
+    ZStream.fromInputStreamManaged(is, chunkSize)
   }
 
   override def copyObjectsGCStoGCS(
@@ -91,19 +105,16 @@ case class GCS(client: Storage) extends GCSApi.Service {
       target_prefix: String,
       parallelism: Int,
       overwrite: Boolean
-  ): Task[Unit] =
-    for {
-      src_blobs    <- listObjects(src_bucket, src_prefix)
-      target_blobs <- listObjects(target_bucket, target_prefix)
-      _            <- compareBlobs(src_blobs, src_prefix, target_blobs, target_prefix, overwrite)
-      _ <- ZIO.foreachParN_(parallelism)(src_blobs)(blob =>
-        Task {
-          val target_path = (target_prefix + "/" + blob.getName.replace(src_prefix, "")).replaceAll("//+", "/")
-          logger.info(s"Copying object from gs://$src_bucket/${blob.getName} to gs://$target_bucket/$target_path")
-          blob.copyTo(target_bucket, target_path)
-        }
-      )
-    } yield ()
+  ): Task[Unit] = for {
+    src_blobs <- listObjects(src_bucket, src_prefix)
+    _ <- ZIO.foreachParN_(parallelism)(src_blobs)(blob =>
+      Task {
+        val target_path = (target_prefix + "/" + blob.getName.replace(src_prefix, "")).replaceAll("//+", "/")
+        logger.info(s"Copying object from gs://$src_bucket/${blob.getName} to gs://$target_bucket/$target_path")
+        blob.copyTo(target_bucket, target_path)
+      }
+    )
+  } yield ()
 
   override def copyObjectsLOCALtoGCS(
       src_path: String,
@@ -111,36 +122,19 @@ case class GCS(client: Storage) extends GCSApi.Service {
       target_prefix: String,
       parallelism: Int,
       overwrite: Boolean
-  ): Task[Unit] =
-    for {
-      src_paths <- listLocalFsObjects(src_path)
-      _ <- ZIO.foreachParN_(parallelism)(src_paths.toList)(path =>
-        for {
-          target_path <- Task(getTargetPath(path, src_path, target_prefix))
-          _           <- putObject(target_bucket, target_path, path)
-        } yield ()
-      )
-    } yield ()
+  ): Task[Unit] = for {
+    src_paths <- listLocalFsObjects(src_path)
+    opts = if (overwrite) List.empty else List(BlobTargetOption.doesNotExist())
+    _ <- ZIO.foreachParN_(parallelism)(src_paths.toList)(path =>
+      for {
+        target_path <- Task(getTargetPath(path, src_path, target_prefix))
+        _           <- putObject(target_bucket, target_path, path, opts)
+      } yield ()
+    )
+  } yield ()
 }
 
 object GCS {
-  private def compareBlobs(
-      src: List[Blob],
-      src_path: String,
-      target: List[Blob],
-      target_path: String,
-      overwrite: Boolean
-  ): Task[Unit] = {
-    val getName =
-      (listOfBlob: List[Blob], pathToReplace: String) => listOfBlob.map(_.getName.replace(pathToReplace, "").replace("/", ""))
-
-    val sourceFileNames = getName(src, src_path)
-    val targetFileNames = getName(target, target_path)
-
-    val intersectCount = (sourceFileNames.intersect(targetFileNames)).size
-
-    ZIO.fail(new Exception("File already exists")).unless(intersectCount == 0)
-  }.unless(overwrite)
 
   /** If target path ends with / -> that means directory in that case append file name to it "source_bucket": "local",
     * "source_path": "/path/to/dir/", "target_bucket" : "gcs-bucket", "target_path" : "/remote/path/" val path =
