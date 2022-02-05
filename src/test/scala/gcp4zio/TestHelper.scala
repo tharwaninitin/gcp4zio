@@ -16,6 +16,6 @@ trait TestHelper {
   lazy val dp_service_account: Option[String] = sys.env.get("DP_SERVICE_ACCOUNT")
 
   val canonical_path: String    = new java.io.File(".").getCanonicalPath
-  val file_path_parquet: String = s"$canonical_path/modules/core/src/test/resources/input/movies/ratings_parquet/ratings.parquet"
-  val file_path_csv: String     = s"$canonical_path/modules/core/src/test/resources/input/movies/ratings/ratings_1.csv"
+  val file_path_parquet: String = s"$canonical_path/src/test/resources/input/ratings.parquet"
+  val file_path_csv: String     = s"$canonical_path/src/test/resources/input/ratings.csv"
 }

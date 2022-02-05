@@ -4,6 +4,7 @@ object Versions {
   val scala3                    = "3.1.0"
   val scala2Versions            = List(scala212, scala213)
   val allScalaVersions          = List(scala212, scala213, scala3)
+  val Gcp4ZioVersion            = "0.1.1"
   val ZioVersion                = "1.0.13"
   val Sl4jVersion               = "1.7.35"
   val LogbackVersion            = "1.2.10"
