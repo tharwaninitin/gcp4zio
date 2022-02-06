@@ -4,10 +4,10 @@ import com.google.api.gax.paging.Page
 import com.google.cloud.storage.Storage.{BlobListOption, BlobTargetOption, BlobWriteOption}
 import com.google.cloud.storage.{Blob, BlobId, BlobInfo, Storage}
 import zio.stream.{ZSink, ZStream}
-import zio.{Layer, Managed, Task, ZIO}
+import zio.{Layer, Managed, Task, UIO, ZIO}
 import java.io.{IOException, InputStream, OutputStream}
 import java.nio.channels.Channels
-import java.nio.file.{FileSystems, Files, Path, Paths}
+import java.nio.file.{FileSystems, Files, Path}
 import scala.jdk.CollectionConverters._
 import GCS._
 
@@ -31,18 +31,11 @@ case class GCS(client: Storage) extends GCSApi.Service {
       }
   }
 
-  override def lookupObject(bucket: String, prefix: String, key: String): Task[Boolean] = {
-    val options: List[BlobListOption] = List(
-      BlobListOption.prefix(prefix)
-    )
-    listObjects(bucket, options)
-      .map(_.iterateAll().asScala)
-      .map { blobs =>
-        if (blobs.nonEmpty) logger.info("Objects \n" + blobs.mkString("\n"))
-        else logger.info(s"No Objects found under gs://$bucket/$prefix")
-        blobs.exists(_.getName == prefix + "/" + key)
-      }
-  }
+  override def lookupObject(bucket: String, prefix: String): Task[Boolean] = Task {
+    val blobId = BlobId.of(bucket, prefix)
+    val blob   = client.get(blobId)
+    blob.exists()
+  }.catchAll(_ => UIO(false))
 
   override def putObject(bucket: String, prefix: String, file: Path, options: List[BlobTargetOption]): Task[Blob] = Task {
     val blobId   = BlobId.of(bucket, prefix)
@@ -50,11 +43,6 @@ case class GCS(client: Storage) extends GCSApi.Service {
     logger.info(s"Copying object from local fs $file to gs://$bucket/$prefix")
     client.create(blobInfo, Files.readAllBytes(file), options: _*)
   }
-
-  override def putObject(bucket: String, prefix: String, file: String): Task[Blob] = for {
-    path <- Task(Paths.get(file))
-    blob <- putObject(bucket, prefix, path, List.empty)
-  } yield blob
 
   override def putObject(bucket: String, prefix: String, options: List[BlobWriteOption]): GCSSink = {
     val os: Managed[IOException, OutputStream] = Managed
@@ -75,11 +63,6 @@ case class GCS(client: Storage) extends GCSApi.Service {
     logger.info(s"Copying object from gs://$bucket/$prefix to local fs $file")
     blob.downloadTo(file)
   }
-
-  override def getObject(bucket: String, prefix: String, file: String): Task[Unit] = for {
-    path <- Task(Paths.get(file))
-    _    <- getObject(bucket, prefix, path)
-  } yield ()
 
   override def getObject(bucket: String, prefix: String, chunkSize: Int): GCSStream = {
     val is: Managed[IOException, InputStream] = Managed
