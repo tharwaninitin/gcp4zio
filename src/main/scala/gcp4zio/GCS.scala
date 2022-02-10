@@ -7,8 +7,7 @@ import zio._
 import zio.stream._
 import java.io.{IOException, InputStream, OutputStream}
 import java.nio.channels.Channels
-import java.nio.file.{FileSystems, Files, Path}
-import scala.jdk.CollectionConverters._
+import java.nio.file.{Files, Path, Paths}
 
 case class GCS(client: Storage) extends GCSApi.Service {
 
@@ -87,10 +86,13 @@ case class GCS(client: Storage) extends GCSApi.Service {
       parallelism: Int,
       overwrite: Boolean
   ): Task[Unit] = for {
-    src_blobs <- listObjects(src_bucket, src_prefix, true, List.empty).runCollect
+    src_blobs <- listObjects(src_bucket, src_prefix, recursive = true, List.empty).runCollect
     _ <- ZIO.foreachParN_(parallelism)(src_blobs)(blob =>
       Task {
-        val target_path = (target_prefix + "/" + blob.getName.replace(src_prefix, "")).replaceAll("//+", "/")
+        val target_path =
+          /*This condition is true if single file is passed else directory is passed*/
+          if (blob.getName == src_prefix) target_prefix
+          else (target_prefix + "/" + blob.getName.replace(src_prefix, "")).replaceAll("//+", "/")
         logger.info(s"Copying object from gs://$src_bucket/${blob.getName} to gs://$target_bucket/$target_path")
         blob.copyTo(target_bucket, target_path)
       }
@@ -104,12 +106,16 @@ case class GCS(client: Storage) extends GCSApi.Service {
       parallelism: Int,
       overwrite: Boolean
   ): Task[Unit] = for {
-    src_paths <- listLocalFsObjects(src_path)
+    src_paths <- listLocalFsObjects(src_path).runCollect
     opts = if (overwrite) List.empty else List(BlobTargetOption.doesNotExist())
-    _ <- ZIO.foreachParN_(parallelism)(src_paths.toList)(path =>
+    _ <- ZIO.foreachParN_(parallelism)(src_paths)(path =>
       for {
-        target_path <- Task(getTargetPath(path, src_path, target_prefix))
-        _           <- putObject(target_bucket, target_path, path, opts)
+        target_path <- Task {
+          /*This condition is true if single file is passed else directory is passed*/
+          if (path.toString == src_path) target_prefix
+          else (target_prefix + "/" + path.toString.replace(src_path, "")).replaceAll("//+", "/")
+        }
+        _ <- putObject(target_bucket, target_path, path, opts)
       } yield ()
     )
   } yield ()
@@ -117,30 +123,9 @@ case class GCS(client: Storage) extends GCSApi.Service {
 
 object GCS {
 
-  /** If target path ends with / -> that means directory in that case append file name to it "source_bucket": "local",
-    * "source_path": "/path/to/dir/", "target_bucket" : "gcs-bucket", "target_path" : "/remote/path/" val path =
-    * getTargetPath("/path/to/dir/file1.txt", "/path/to/dir/", "/remote/path/") path = "/remote/path/file1.txt" Else it means it's
-    * a file -> directly return same "source_bucket": "local", "source_path": "/path/to/file/file.txt", "target_bucket" :
-    * "gcs-bucket", "target_path" : "/path/file.txt" val path = getTargetPath("/path/to/file/file.txt", "/path/to/file/file.txt",
-    * "/path/file.txt") path = "/path/file.txt"
-    */
-  private def getTargetPath(fileName: Path, srcPath: String, targetPath: String): String = {
-    if (targetPath.endsWith("/")) {
-      val replaceableString =
-        if (srcPath.endsWith("/"))
-          srcPath // better approach -> new File(fileStore.sourcePath).isDirectory
-        else {
-          val splitFilePath = srcPath.split("/")
-          splitFilePath.slice(0, splitFilePath.length - 1).mkString("/")
-        }
-      targetPath + fileName.toString.replace(replaceableString, "")
-    } else targetPath
-  }.replaceAll("//+", "/")
-
-  private def listLocalFsObjects(path: String): Task[Iterator[Path]] = Task {
-    val dir = FileSystems.getDefault.getPath(path)
-    Files.walk(dir).iterator().asScala.filter(Files.isRegularFile(_))
-  }
+  def listLocalFsObjects(path: String): Stream[Throwable, Path] = Stream
+    .fromJavaIterator(Files.walk(Paths.get(path)).iterator())
+    .filter(Files.isRegularFile(_))
 
   def live(path: Option[String] = None): Layer[Throwable, GCSEnv] =
     Managed.effect(GCSClient(path)).map(client => GCS(client)).toLayer
