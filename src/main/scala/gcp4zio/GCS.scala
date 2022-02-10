@@ -1,40 +1,38 @@
 package gcp4zio
 
-import com.google.api.gax.paging.Page
 import com.google.cloud.storage.Storage.{BlobListOption, BlobTargetOption, BlobWriteOption}
 import com.google.cloud.storage.{Blob, BlobId, BlobInfo, Storage}
-import zio.stream.{ZSink, ZStream}
-import zio.{Layer, Managed, Task, UIO, ZIO}
+import gcp4zio.GCS._
+import zio._
+import zio.stream._
 import java.io.{IOException, InputStream, OutputStream}
 import java.nio.channels.Channels
 import java.nio.file.{FileSystems, Files, Path}
 import scala.jdk.CollectionConverters._
-import GCS._
 
 case class GCS(client: Storage) extends GCSApi.Service {
 
-  override def listObjects(bucket: String, options: List[BlobListOption]): Task[Page[Blob]] = Task {
-    client.list(bucket, options: _*)
-  }
-
-  override def listObjects(bucket: String, prefix: String): Task[List[Blob]] = {
-    val options: List[BlobListOption] = List(
-      // BlobListOption.currentDirectory(),
-      BlobListOption.prefix(prefix)
-    )
-    listObjects(bucket, options)
-      .map(_.iterateAll().asScala)
-      .map { blobs =>
-        // if (blobs.nonEmpty) logger.info("Objects \n"+blobs.mkString("\n"))
-        // else logger.info(s"No Objects found under gs://$bucket/$prefix")
-        blobs.toList
-      }
+  override def listObjects(
+      bucket: String,
+      prefix: String,
+      recursive: Boolean,
+      options: List[BlobListOption]
+  ): Stream[Throwable, Blob] = {
+    val inputOptions    = BlobListOption.prefix(prefix) :: options
+    val blobListOptions = if (recursive) inputOptions else BlobListOption.currentDirectory() :: inputOptions
+    Stream.fromJavaIterator(client.list(bucket, blobListOptions: _*).iterateAll().iterator())
   }
 
   override def lookupObject(bucket: String, prefix: String): Task[Boolean] = Task {
     val blobId = BlobId.of(bucket, prefix)
     val blob   = client.get(blobId)
     blob.exists()
+  }.catchAll(_ => UIO(false))
+
+  override def deleteObject(bucket: String, prefix: String): Task[Boolean] = Task {
+    val blobId = BlobId.of(bucket, prefix)
+    logger.info(s"Deleting blob $blobId")
+    client.delete(blobId)
   }.catchAll(_ => UIO(false))
 
   override def putObject(bucket: String, prefix: String, file: Path, options: List[BlobTargetOption]): Task[Blob] = Task {
@@ -89,7 +87,7 @@ case class GCS(client: Storage) extends GCSApi.Service {
       parallelism: Int,
       overwrite: Boolean
   ): Task[Unit] = for {
-    src_blobs <- listObjects(src_bucket, src_prefix)
+    src_blobs <- listObjects(src_bucket, src_prefix, true, List.empty).runCollect
     _ <- ZIO.foreachParN_(parallelism)(src_blobs)(blob =>
       Task {
         val target_path = (target_prefix + "/" + blob.getName.replace(src_prefix, "")).replaceAll("//+", "/")
