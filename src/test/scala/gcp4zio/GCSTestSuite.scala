@@ -54,11 +54,17 @@ object GCSTestSuite extends TestHelper {
         val effect = GCSApi.deleteObject(gcs_bucket, "temp/test/ratings2.csv")
         assertM(effect.foldM(ex => ZIO.fail(ex.toString), op => ZIO.succeed(op.toString)))(equalTo("false"))
       },
+      testM("Execute listObjects to get size of all objects in bucket") {
+        val mb = 1024 * 1024
+        val effect =
+          GCSApi.listObjects(gcs_bucket).map(_.getSize).fold(0L)(_ + _).tap(s => UIO(logger.info(s"Total Size => ${s / mb} MB")))
+        assertM(effect.foldM(ex => ZIO.fail(ex.toString), _ => ZIO.succeed("ok")))(equalTo("ok"))
+      },
       testM("Execute(streaming) listObjects => getObject") {
         val transducer: Transducer[Throwable, Byte, String] = ZTransducer.utf8Decode >>> ZTransducer.splitLines
         val logStream                                       = Stream.fromEffect(UIO(logger.info("#" * 50)))
         val stream = GCSApi
-          .listObjects(gcs_bucket, "temp/test/", false, List.empty)
+          .listObjects(gcs_bucket, Some("temp/test/"), recursive = false, List.empty)
           .flatMap { blob =>
             logger.info(blob.getName)
             GCSApi.getObject(gcs_bucket, blob.getName, 4096).transduce(transducer).tap(line => UIO(logger.info(line)))

@@ -14,12 +14,19 @@ object GCSApi {
     def putObject(bucket: String, prefix: String, options: List[BlobWriteOption]): GCSSink
     def lookupObject(bucket: String, prefix: String): Task[Boolean]
     def deleteObject(bucket: String, prefix: String): Task[Boolean]
-    def listObjects(bucket: String, prefix: String, recursive: Boolean, options: List[BlobListOption]): Stream[Throwable, Blob]
+    def listObjects(
+        bucket: String,
+        prefix: Option[String],
+        recursive: Boolean,
+        options: List[BlobListOption]
+    ): Stream[Throwable, Blob]
     def copyObjectsGCStoGCS(
         src_bucket: String,
-        src_prefix: String,
+        src_prefix: Option[String],
+        src_recursive: Boolean,
+        src_options: List[BlobListOption],
         target_bucket: String,
-        target_prefix: String,
+        target_prefix: Option[String],
         parallelism: Int,
         overwrite: Boolean
     ): Task[Unit]
@@ -46,20 +53,33 @@ object GCSApi {
     ZIO.accessM(_.get.deleteObject(bucket, prefix))
   def listObjects(
       bucket: String,
-      prefix: String,
-      recursive: Boolean,
-      options: List[BlobListOption]
+      prefix: Option[String] = None,
+      recursive: Boolean = true,
+      options: List[BlobListOption] = List.empty
   ): ZStream[GCSEnv, Throwable, Blob] =
     ZStream.accessStream(_.get.listObjects(bucket, prefix, recursive, options))
   def copyObjectsGCStoGCS(
       src_bucket: String,
-      src_prefix: String,
+      src_prefix: Option[String],
+      src_recursive: Boolean = true,
+      src_options: List[BlobListOption] = List.empty,
       target_bucket: String,
-      target_prefix: String,
+      target_prefix: Option[String],
       parallelism: Int,
       overwrite: Boolean
   ): ZIO[GCSEnv, Throwable, Unit] =
-    ZIO.accessM(_.get.copyObjectsGCStoGCS(src_bucket, src_prefix, target_bucket, target_prefix, parallelism, overwrite))
+    ZIO.accessM(
+      _.get.copyObjectsGCStoGCS(
+        src_bucket,
+        src_prefix,
+        src_recursive,
+        src_options,
+        target_bucket,
+        target_prefix,
+        parallelism,
+        overwrite
+      )
+    )
   def copyObjectsLOCALtoGCS(
       src_path: String,
       target_bucket: String,

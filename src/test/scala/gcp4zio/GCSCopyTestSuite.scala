@@ -16,11 +16,27 @@ object GCSCopyTestSuite extends TestHelper {
         assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       },
       testM("Execute copyObjectsGCStoGCS single file") {
-        val step = GCSApi.copyObjectsGCStoGCS(gcs_bucket, "temp/test/ratings.csv", gcs_bucket, "temp2/test/ratings.csv", 2, true)
+        val step =
+          GCSApi.copyObjectsGCStoGCS(
+            gcs_bucket,
+            Some("temp/test/ratings.csv"),
+            target_bucket = gcs_bucket,
+            target_prefix = Some("temp2/test/ratings.csv"),
+            parallelism = 2,
+            overwrite = true
+          )
         assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       },
       testM("Execute copyObjectsGCStoGCS directory") {
-        val step = GCSApi.copyObjectsGCStoGCS(gcs_bucket, "temp/test/", gcs_bucket, "temp2/test/", 2, true)
+        val step =
+          GCSApi.copyObjectsGCStoGCS(
+            gcs_bucket,
+            Some("temp/test/"),
+            target_bucket = gcs_bucket,
+            target_prefix = Some("temp2/test/"),
+            parallelism = 2,
+            overwrite = true
+          )
         assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       }
     ) @@ TestAspect.sequential

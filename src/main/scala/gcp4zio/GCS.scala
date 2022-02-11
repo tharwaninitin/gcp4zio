@@ -13,11 +13,11 @@ case class GCS(client: Storage) extends GCSApi.Service {
 
   override def listObjects(
       bucket: String,
-      prefix: String,
+      prefix: Option[String],
       recursive: Boolean,
       options: List[BlobListOption]
   ): Stream[Throwable, Blob] = {
-    val inputOptions    = BlobListOption.prefix(prefix) :: options
+    val inputOptions    = prefix.map(BlobListOption.prefix).toList ::: options
     val blobListOptions = if (recursive) inputOptions else BlobListOption.currentDirectory() :: inputOptions
     Stream.fromJavaIterator(client.list(bucket, blobListOptions: _*).iterateAll().iterator())
   }
@@ -78,26 +78,33 @@ case class GCS(client: Storage) extends GCSApi.Service {
     ZStream.fromInputStreamManaged(is, chunkSize)
   }
 
+  private def getTargetPath(src_path: String, target_path: String, current_path: String): String =
+    if (current_path == src_path) target_path
+    else (target_path + "/" + current_path.replace(src_path, "")).replaceAll("//+", "/")
+
   override def copyObjectsGCStoGCS(
       src_bucket: String,
-      src_prefix: String,
+      src_prefix: Option[String],
+      src_recursive: Boolean,
+      src_options: List[BlobListOption],
       target_bucket: String,
-      target_prefix: String,
+      target_prefix: Option[String],
       parallelism: Int,
       overwrite: Boolean
-  ): Task[Unit] = for {
-    src_blobs <- listObjects(src_bucket, src_prefix, recursive = true, List.empty).runCollect
-    _ <- ZIO.foreachParN_(parallelism)(src_blobs)(blob =>
+  ): Task[Unit] = listObjects(src_bucket, src_prefix, src_recursive, src_options)
+    .mapMPar(parallelism) { blob =>
       Task {
-        val target_path =
-          /*This condition is true if single file is passed else directory is passed*/
-          if (blob.getName == src_prefix) target_prefix
-          else (target_prefix + "/" + blob.getName.replace(src_prefix, "")).replaceAll("//+", "/")
-        logger.info(s"Copying object from gs://$src_bucket/${blob.getName} to gs://$target_bucket/$target_path")
-        blob.copyTo(target_bucket, target_path)
+        if (target_prefix.isEmpty) {
+          logger.info(s"Copying object from gs://$src_bucket/${blob.getName} to gs://$target_bucket/${blob.getName}")
+          blob.copyTo(target_bucket)
+        } else {
+          val target_path = getTargetPath(src_prefix.getOrElse(""), target_prefix.get, blob.getName)
+          logger.info(s"Copying object from gs://$src_bucket/${blob.getName} to gs://$target_bucket/$target_path")
+          blob.copyTo(target_bucket, target_path)
+        }
       }
-    )
-  } yield ()
+    }
+    .runDrain
 
   override def copyObjectsLOCALtoGCS(
       src_path: String,
@@ -105,20 +112,15 @@ case class GCS(client: Storage) extends GCSApi.Service {
       target_prefix: String,
       parallelism: Int,
       overwrite: Boolean
-  ): Task[Unit] = for {
-    src_paths <- listLocalFsObjects(src_path).runCollect
-    opts = if (overwrite) List.empty else List(BlobTargetOption.doesNotExist())
-    _ <- ZIO.foreachParN_(parallelism)(src_paths)(path =>
-      for {
-        target_path <- Task {
-          /*This condition is true if single file is passed else directory is passed*/
-          if (path.toString == src_path) target_prefix
-          else (target_prefix + "/" + path.toString.replace(src_path, "")).replaceAll("//+", "/")
-        }
-        _ <- putObject(target_bucket, target_path, path, opts)
-      } yield ()
-    )
-  } yield ()
+  ): Task[Unit] = {
+    val opts = if (overwrite) List.empty else List(BlobTargetOption.doesNotExist())
+    listLocalFsObjects(src_path)
+      .mapMPar(parallelism) { path =>
+        val target_path = getTargetPath(src_path, target_prefix, path.toString)
+        putObject(target_bucket, target_path, path, opts)
+      }
+      .runDrain
+  }
 }
 
 object GCS {
