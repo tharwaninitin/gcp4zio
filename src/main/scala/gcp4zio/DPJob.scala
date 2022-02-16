@@ -5,11 +5,11 @@ import zio.{Managed, Task, TaskLayer}
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
 
-case class DPJob(client: JobControllerClient) extends DPJobApi.Service[Task] {
+case class DPJob(client: JobControllerClient) extends DPJobApi.Service {
 
-  private def submitAndWait(projectId: String, region: String, job: Job): Unit = {
-    val request = client.submitJob(projectId, region, job)
-    val jobId   = request.getReference.getJobId
+  private def submitAndWait(projectId: String, region: String, job: Job): Job = {
+    val response = client.submitJob(projectId, region, job)
+    val jobId    = response.getReference.getJobId
     logger.info(s"Submitted job $jobId")
     var continue = true
     var jobInfo  = client.getJob(projectId, region, jobId)
@@ -30,6 +30,7 @@ case class DPJob(client: JobControllerClient) extends DPJobApi.Service[Task] {
           TimeUnit.SECONDS.sleep(10)
       }
     }
+    response
   }
 
   def executeSparkJob(
@@ -40,15 +41,15 @@ case class DPJob(client: JobControllerClient) extends DPJobApi.Service[Task] {
       clusterName: String,
       project: String,
       region: String
-  ): Task[Unit] = Task {
+  ): Task[Job] = Task {
     logger.info(s"""Trying to submit spark job on Dataproc with Configurations:
-                   |dp_region => $region
-                   |dp_project => $project
-                   |dp_cluster_name => $clusterName
-                   |main_class => $mainClass
+                   |region => $region
+                   |project => $project
+                   |clusterName => $clusterName
+                   |mainClass => $mainClass
                    |args => $args
-                   |spark_conf => $conf""".stripMargin)
-    logger.info("dp_libs")
+                   |conf => $conf""".stripMargin)
+    logger.info("libs")
     libs.foreach(logger.info)
 
     val jobPlacement = JobPlacement.newBuilder().setClusterName(clusterName).build()
@@ -63,11 +64,11 @@ case class DPJob(client: JobControllerClient) extends DPJobApi.Service[Task] {
     submitAndWait(project, region, job)
   }
 
-  def executeHiveJob(query: String, clusterName: String, project: String, region: String): Task[Unit] = Task {
+  def executeHiveJob(query: String, clusterName: String, project: String, region: String): Task[Job] = Task {
     logger.info(s"""Trying to submit hive job on Dataproc with Configurations:
-                   |dp_region => $region
-                   |dp_project => $project
-                   |dp_cluster_name => $clusterName
+                   |region => $region
+                   |project => $project
+                   |clusterName => $clusterName
                    |query => $query""".stripMargin)
     val jobPlacement = JobPlacement.newBuilder().setClusterName(clusterName).build()
     val queryList    = QueryList.newBuilder().addQueries(query)

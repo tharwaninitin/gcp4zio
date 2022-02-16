@@ -13,7 +13,7 @@ package object gcp4zio extends ApplicationLogger {
   type GCSEnv           = Has[GCSApi.Service]
   type BQEnv            = Has[BQApi.Service[Task]]
   type DPEnv            = Has[DPApi.Service]
-  type DPJobEnv         = Has[DPJobApi.Service[Task]]
+  type DPJobEnv         = Has[DPJobApi.Service]
 
   case class BQLoadException(msg: String) extends RuntimeException(msg)
 
