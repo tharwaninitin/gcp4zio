@@ -1,48 +1,38 @@
 package gcp4zio
 
-import com.google.api.gax.paging.Page
 import com.google.cloud.storage.Storage.{BlobListOption, BlobTargetOption, BlobWriteOption}
 import com.google.cloud.storage.{Blob, BlobId, BlobInfo, Storage}
-import zio.stream.{ZSink, ZStream}
-import zio.{Layer, Managed, Task, ZIO}
+import gcp4zio.GCS._
+import zio._
+import zio.stream._
 import java.io.{IOException, InputStream, OutputStream}
 import java.nio.channels.Channels
-import java.nio.file.{FileSystems, Files, Path, Paths}
-import scala.jdk.CollectionConverters._
-import GCS._
+import java.nio.file.{Files, Path, Paths}
 
 case class GCS(client: Storage) extends GCSApi.Service {
 
-  override def listObjects(bucket: String, options: List[BlobListOption]): Task[Page[Blob]] = Task {
-    client.list(bucket, options: _*)
+  override def listObjects(
+      bucket: String,
+      prefix: Option[String],
+      recursive: Boolean,
+      options: List[BlobListOption]
+  ): Stream[Throwable, Blob] = {
+    val inputOptions    = prefix.map(BlobListOption.prefix).toList ::: options
+    val blobListOptions = if (recursive) inputOptions else BlobListOption.currentDirectory() :: inputOptions
+    Stream.fromJavaIterator(client.list(bucket, blobListOptions: _*).iterateAll().iterator())
   }
 
-  override def listObjects(bucket: String, prefix: String): Task[List[Blob]] = {
-    val options: List[BlobListOption] = List(
-      // BlobListOption.currentDirectory(),
-      BlobListOption.prefix(prefix)
-    )
-    listObjects(bucket, options)
-      .map(_.iterateAll().asScala)
-      .map { blobs =>
-        // if (blobs.nonEmpty) logger.info("Objects \n"+blobs.mkString("\n"))
-        // else logger.info(s"No Objects found under gs://$bucket/$prefix")
-        blobs.toList
-      }
-  }
+  override def lookupObject(bucket: String, prefix: String): Task[Boolean] = Task {
+    val blobId = BlobId.of(bucket, prefix)
+    val blob   = client.get(blobId)
+    blob.exists()
+  }.catchAll(_ => UIO(false))
 
-  override def lookupObject(bucket: String, prefix: String, key: String): Task[Boolean] = {
-    val options: List[BlobListOption] = List(
-      BlobListOption.prefix(prefix)
-    )
-    listObjects(bucket, options)
-      .map(_.iterateAll().asScala)
-      .map { blobs =>
-        if (blobs.nonEmpty) logger.info("Objects \n" + blobs.mkString("\n"))
-        else logger.info(s"No Objects found under gs://$bucket/$prefix")
-        blobs.exists(_.getName == prefix + "/" + key)
-      }
-  }
+  override def deleteObject(bucket: String, prefix: String): Task[Boolean] = Task {
+    val blobId = BlobId.of(bucket, prefix)
+    logger.info(s"Deleting blob $blobId")
+    client.delete(blobId)
+  }.catchAll(_ => UIO(false))
 
   override def putObject(bucket: String, prefix: String, file: Path, options: List[BlobTargetOption]): Task[Blob] = Task {
     val blobId   = BlobId.of(bucket, prefix)
@@ -50,11 +40,6 @@ case class GCS(client: Storage) extends GCSApi.Service {
     logger.info(s"Copying object from local fs $file to gs://$bucket/$prefix")
     client.create(blobInfo, Files.readAllBytes(file), options: _*)
   }
-
-  override def putObject(bucket: String, prefix: String, file: String): Task[Blob] = for {
-    path <- Task(Paths.get(file))
-    blob <- putObject(bucket, prefix, path, List.empty)
-  } yield blob
 
   override def putObject(bucket: String, prefix: String, options: List[BlobWriteOption]): GCSSink = {
     val os: Managed[IOException, OutputStream] = Managed
@@ -76,11 +61,6 @@ case class GCS(client: Storage) extends GCSApi.Service {
     blob.downloadTo(file)
   }
 
-  override def getObject(bucket: String, prefix: String, file: String): Task[Unit] = for {
-    path <- Task(Paths.get(file))
-    _    <- getObject(bucket, prefix, path)
-  } yield ()
-
   override def getObject(bucket: String, prefix: String, chunkSize: Int): GCSStream = {
     val is: Managed[IOException, InputStream] = Managed
       .fromAutoCloseable {
@@ -98,23 +78,33 @@ case class GCS(client: Storage) extends GCSApi.Service {
     ZStream.fromInputStreamManaged(is, chunkSize)
   }
 
+  private def getTargetPath(src_path: String, target_path: String, current_path: String): String =
+    if (current_path == src_path) target_path
+    else (target_path + "/" + current_path.replace(src_path, "")).replaceAll("//+", "/")
+
   override def copyObjectsGCStoGCS(
       src_bucket: String,
-      src_prefix: String,
+      src_prefix: Option[String],
+      src_recursive: Boolean,
+      src_options: List[BlobListOption],
       target_bucket: String,
-      target_prefix: String,
+      target_prefix: Option[String],
       parallelism: Int,
       overwrite: Boolean
-  ): Task[Unit] = for {
-    src_blobs <- listObjects(src_bucket, src_prefix)
-    _ <- ZIO.foreachParN_(parallelism)(src_blobs)(blob =>
+  ): Task[Unit] = listObjects(src_bucket, src_prefix, src_recursive, src_options)
+    .mapMPar(parallelism) { blob =>
       Task {
-        val target_path = (target_prefix + "/" + blob.getName.replace(src_prefix, "")).replaceAll("//+", "/")
-        logger.info(s"Copying object from gs://$src_bucket/${blob.getName} to gs://$target_bucket/$target_path")
-        blob.copyTo(target_bucket, target_path)
+        if (target_prefix.isEmpty) {
+          logger.info(s"Copying object from gs://$src_bucket/${blob.getName} to gs://$target_bucket/${blob.getName}")
+          blob.copyTo(target_bucket)
+        } else {
+          val target_path = getTargetPath(src_prefix.getOrElse(""), target_prefix.get, blob.getName)
+          logger.info(s"Copying object from gs://$src_bucket/${blob.getName} to gs://$target_bucket/$target_path")
+          blob.copyTo(target_bucket, target_path)
+        }
       }
-    )
-  } yield ()
+    }
+    .runDrain
 
   override def copyObjectsLOCALtoGCS(
       src_path: String,
@@ -122,44 +112,22 @@ case class GCS(client: Storage) extends GCSApi.Service {
       target_prefix: String,
       parallelism: Int,
       overwrite: Boolean
-  ): Task[Unit] = for {
-    src_paths <- listLocalFsObjects(src_path)
-    opts = if (overwrite) List.empty else List(BlobTargetOption.doesNotExist())
-    _ <- ZIO.foreachParN_(parallelism)(src_paths.toList)(path =>
-      for {
-        target_path <- Task(getTargetPath(path, src_path, target_prefix))
-        _           <- putObject(target_bucket, target_path, path, opts)
-      } yield ()
-    )
-  } yield ()
+  ): Task[Unit] = {
+    val opts = if (overwrite) List.empty else List(BlobTargetOption.doesNotExist())
+    listLocalFsObjects(src_path)
+      .mapMPar(parallelism) { path =>
+        val target_path = getTargetPath(src_path, target_prefix, path.toString)
+        putObject(target_bucket, target_path, path, opts)
+      }
+      .runDrain
+  }
 }
 
 object GCS {
 
-  /** If target path ends with / -> that means directory in that case append file name to it "source_bucket": "local",
-    * "source_path": "/path/to/dir/", "target_bucket" : "gcs-bucket", "target_path" : "/remote/path/" val path =
-    * getTargetPath("/path/to/dir/file1.txt", "/path/to/dir/", "/remote/path/") path = "/remote/path/file1.txt" Else it means it's
-    * a file -> directly return same "source_bucket": "local", "source_path": "/path/to/file/file.txt", "target_bucket" :
-    * "gcs-bucket", "target_path" : "/path/file.txt" val path = getTargetPath("/path/to/file/file.txt", "/path/to/file/file.txt",
-    * "/path/file.txt") path = "/path/file.txt"
-    */
-  private def getTargetPath(fileName: Path, srcPath: String, targetPath: String): String = {
-    if (targetPath.endsWith("/")) {
-      val replaceableString =
-        if (srcPath.endsWith("/"))
-          srcPath // better approach -> new File(fileStore.sourcePath).isDirectory
-        else {
-          val splitFilePath = srcPath.split("/")
-          splitFilePath.slice(0, splitFilePath.length - 1).mkString("/")
-        }
-      targetPath + fileName.toString.replace(replaceableString, "")
-    } else targetPath
-  }.replaceAll("//+", "/")
-
-  private def listLocalFsObjects(path: String): Task[Iterator[Path]] = Task {
-    val dir = FileSystems.getDefault.getPath(path)
-    Files.walk(dir).iterator().asScala.filter(Files.isRegularFile(_))
-  }
+  def listLocalFsObjects(path: String): Stream[Throwable, Path] = Stream
+    .fromJavaIterator(Files.walk(Paths.get(path)).iterator())
+    .filter(Files.isRegularFile(_))
 
   def live(path: Option[String] = None): Layer[Throwable, GCSEnv] =
     Managed.effect(GCSClient(path)).map(client => GCS(client)).toLayer

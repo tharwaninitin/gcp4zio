@@ -9,6 +9,7 @@ object RunTests extends DefaultRunnableSpec with TestHelper {
     BQSchemaMappingTestSuite.spec
     // BQStepsTestSuite.spec,
     // GCSTestSuite.spec,
+    // GCSCopyTestSuite.spec,
     // DPCreateTestSuite.spec
     // DPStepsTestSuite.spec,
     // DPDeleteTestSuite.spec
