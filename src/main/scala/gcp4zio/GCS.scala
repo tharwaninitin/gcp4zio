@@ -89,8 +89,7 @@ case class GCS(client: Storage) extends GCSApi.Service {
       src_options: List[BlobListOption],
       target_bucket: String,
       target_prefix: Option[String],
-      parallelism: Int,
-      overwrite: Boolean
+      parallelism: Int
   ): Task[Unit] = listObjects(src_bucket, src_prefix, src_recursive, src_options)
     .mapMPar(parallelism) { blob =>
       Task {
