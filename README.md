@@ -9,7 +9,28 @@
 
 ***Google Cloud Storage API***
 ```scala
-//TODO
+import gcp4zio.GCSApi
+
+// Copy single object from source bucket to target bucket
+GCSApi.copyObjectsGCStoGCS(
+  src_bucket = "src_gcs_bucket",
+  src_prefix = Some("temp/test/ratings.csv"),
+  target_bucket = "tgt_gcs_bucket",
+  target_prefix = Some("temp2/test/ratings.csv")
+)
+
+// Copy all objects from source bucket to target bucket
+GCSApi.copyObjectsGCStoGCS(
+  src_bucket = "src_gcs_bucket",
+  target_bucket = "tgt_gcs_bucket"
+)
+
+// Copy all objects from source bucket with prefix to target bucket
+GCSApi.copyObjectsGCStoGCS(
+  src_bucket = "src_gcs_bucket",
+  src_prefix = Some("temp/test"),
+  target_bucket = "tgt_gcs_bucket"
+)
 ```
 ***Dataproc API***
 ```scala

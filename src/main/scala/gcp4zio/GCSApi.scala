@@ -27,8 +27,7 @@ object GCSApi {
         src_options: List[BlobListOption],
         target_bucket: String,
         target_prefix: Option[String],
-        parallelism: Int,
-        overwrite: Boolean
+        parallelism: Int
     ): Task[Unit]
     def copyObjectsLOCALtoGCS(
         src_path: String,
@@ -60,13 +59,12 @@ object GCSApi {
     ZStream.accessStream(_.get.listObjects(bucket, prefix, recursive, options))
   def copyObjectsGCStoGCS(
       src_bucket: String,
-      src_prefix: Option[String],
+      src_prefix: Option[String] = None,
       src_recursive: Boolean = true,
       src_options: List[BlobListOption] = List.empty,
       target_bucket: String,
-      target_prefix: Option[String],
-      parallelism: Int,
-      overwrite: Boolean
+      target_prefix: Option[String] = None,
+      parallelism: Int = 2
   ): ZIO[GCSEnv, Throwable, Unit] =
     ZIO.accessM(
       _.get.copyObjectsGCStoGCS(
@@ -76,8 +74,7 @@ object GCSApi {
         src_options,
         target_bucket,
         target_prefix,
-        parallelism,
-        overwrite
+        parallelism
       )
     )
   def copyObjectsLOCALtoGCS(
