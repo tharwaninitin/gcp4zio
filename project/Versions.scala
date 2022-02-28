@@ -11,5 +11,5 @@ object Versions {
   val ScalaJavaCollectionCompat = "2.6.0"
   val GcpBqVersion              = "2.9.0"
   val GcpDpVersion              = "2.3.2"
-  val GcpGcsVersion             = "2.4.2"
+  val GcpGcsVersion             = "2.4.3"
 }
