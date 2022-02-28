@@ -1,4 +1,4 @@
-name: Semantic Versioning Check
+name: Semantic Versioning Policy Check
 on: [push]
 jobs:
   semvercheck:
@@ -10,5 +10,5 @@ jobs:
       with:
         distribution: 'adopt'
         java-version: 11
-    - name: Run Semantic Versioning Check
+    - name: Run Semantic Versioning Policy Check
       run: sbt versionPolicyCheck
