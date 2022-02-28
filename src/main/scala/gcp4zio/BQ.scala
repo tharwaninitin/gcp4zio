@@ -71,32 +71,32 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
       destination_dataset: String,
       destination_table: String
   ): Task[Unit] = Task {
-    if (source_locations.isRight) {
-      logger.info(s"No of BQ partitions: ${source_locations.getOrElse(Seq.empty).length}")
-      source_locations.getOrElse(Seq.empty).foreach { case (src_path, partition) =>
-        val table_partition = destination_table + "$" + partition
-        val full_table_name = destination_dataset + "." + table_partition
+    source_locations match {
+      case Left(path) =>
+        logger.info("BQ file path: " + path)
+        val full_table_name = destination_dataset + "." + destination_table
         val bq_load_cmd =
-          s"""bq load --replace --time_partitioning_field date --require_partition_filter=false --source_format=${source_format.toString} $full_table_name $src_path""".stripMargin
-        logger.info(s"Loading data from path: $src_path")
+          s"""bq load --replace --source_format=${source_format.toString} $full_table_name $path""".stripMargin
+        logger.info(s"Loading data from path: $path")
         logger.info(s"Destination table: $full_table_name")
         logger.info(s"BQ Load command is: $bq_load_cmd")
         val x = s"$bq_load_cmd".!
         logger.info(s"Output exit code: $x")
         if (x != 0) throw BQLoadException("Error executing BQ load command")
-      }
-    } else {
-      logger.info("BQ file path: " + source_locations.left.getOrElse(""))
-      val full_table_name = destination_dataset + "." + destination_table
-      val bq_load_cmd =
-        s"""bq load --replace --source_format=${source_format.toString} $full_table_name ${source_locations.left
-          .getOrElse("")}""".stripMargin
-      logger.info(s"Loading data from path: ${source_locations.left.getOrElse("")}")
-      logger.info(s"Destination table: $full_table_name")
-      logger.info(s"BQ Load command is: $bq_load_cmd")
-      val x = s"$bq_load_cmd".!
-      logger.info(s"Output exit code: $x")
-      if (x != 0) throw BQLoadException("Error executing BQ load command")
+      case Right(list) =>
+        logger.info(s"No of BQ partitions: ${list.length}")
+        list.foreach { case (src_path, partition) =>
+          val table_partition = destination_table + "$" + partition
+          val full_table_name = destination_dataset + "." + table_partition
+          val bq_load_cmd =
+            s"""bq load --replace --time_partitioning_field date --require_partition_filter=false --source_format=${source_format.toString} $full_table_name $src_path""".stripMargin
+          logger.info(s"Loading data from path: $src_path")
+          logger.info(s"Destination table: $full_table_name")
+          logger.info(s"BQ Load command is: $bq_load_cmd")
+          val x = s"$bq_load_cmd".!
+          logger.info(s"Output exit code: $x")
+          if (x != 0) throw BQLoadException("Error executing BQ load command")
+        }
     }
   }
 
