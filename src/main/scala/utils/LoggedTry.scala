@@ -3,6 +3,7 @@ package utils
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
+@SuppressWarnings(Array("org.wartremover.warts.Throw"))
 object LoggedTry extends ApplicationLogger {
   def apply[A](
       computation: => A,

@@ -3,6 +3,7 @@ package gcp4zio
 import com.google.cloud.dataproc.v1.{JobControllerClient, JobControllerSettings}
 import zio.Task
 
+@SuppressWarnings(Array("org.wartremover.warts.Throw"))
 object DPJobClient {
   def apply(endpoint: String): Task[JobControllerClient] = Task {
     sys.env.getOrElse("GOOGLE_APPLICATION_CREDENTIALS", "NOT_SET_IN_ENV") match {

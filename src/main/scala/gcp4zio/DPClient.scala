@@ -3,6 +3,7 @@ package gcp4zio
 import com.google.cloud.dataproc.v1.{ClusterControllerClient, ClusterControllerSettings}
 import zio.Task
 
+@SuppressWarnings(Array("org.wartremover.warts.Throw"))
 object DPClient {
   def apply(endpoint: String): Task[ClusterControllerClient] = Task {
     sys.env.getOrElse("GOOGLE_APPLICATION_CREDENTIALS", "NOT_SET_IN_ENV") match {

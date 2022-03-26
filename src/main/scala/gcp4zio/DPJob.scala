@@ -5,6 +5,7 @@ import zio.{Managed, Task, TaskLayer}
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
 
+@SuppressWarnings(Array("org.wartremover.warts.While", "org.wartremover.warts.Var", "org.wartremover.warts.Throw"))
 case class DPJob(client: JobControllerClient) extends DPJobApi.Service {
 
   private def submitAndWait(projectId: String, region: String, job: Job): Job = {

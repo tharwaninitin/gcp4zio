@@ -7,9 +7,17 @@ import zio.{Managed, Task, TaskLayer, ZIO}
 import scala.jdk.CollectionConverters._
 import scala.sys.process._
 
+@SuppressWarnings(
+  Array(
+    "org.wartremover.warts.Var",
+    "org.wartremover.warts.ToString",
+    "org.wartremover.warts.Throw",
+    "org.wartremover.warts.PlatformDefault"
+  )
+)
 case class BQ(client: BigQuery) extends BQApi.Service[Task] {
 
-  private def getFormatOptions(input_type: BQInputType): FormatOptions = input_type match {
+  private def getFormatOptions(inputType: BQInputType): FormatOptions = inputType match {
     case PARQUET => FormatOptions.parquet
     case ORC     => FormatOptions.orc
     case CSV(field_delimiter, header_present, _, _) =>
@@ -59,41 +67,41 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
     val queryJob = client.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build())
 
     // Wait for the query to complete.
-    queryJob.waitFor()
+    val job = queryJob.waitFor()
 
-    val result: TableResult = queryJob.getQueryResults()
+    val result: TableResult = job.getQueryResults()
     result.iterateAll().asScala
   }
 
   def loadTableFromLocalFile(
-      source_locations: Either[String, Seq[(String, String)]],
-      source_format: BQInputType,
-      destination_dataset: String,
-      destination_table: String
+      sourceLocations: Either[String, Seq[(String, String)]],
+      sourceFormat: BQInputType,
+      destinationDataset: String,
+      destinationTable: String
   ): Task[Unit] = Task {
-    source_locations match {
+    sourceLocations match {
       case Left(path) =>
         logger.info("BQ file path: " + path)
-        val full_table_name = destination_dataset + "." + destination_table
-        val bq_load_cmd =
-          s"""bq load --replace --source_format=${source_format.toString} $full_table_name $path""".stripMargin
+        val fullTableName = destinationDataset + "." + destinationTable
+        val bqLoadCmd =
+          s"""bq load --replace --source_format=${sourceFormat.toString} $fullTableName $path""".stripMargin
         logger.info(s"Loading data from path: $path")
-        logger.info(s"Destination table: $full_table_name")
-        logger.info(s"BQ Load command is: $bq_load_cmd")
-        val x = s"$bq_load_cmd".!
+        logger.info(s"Destination table: $fullTableName")
+        logger.info(s"BQ Load command is: $bqLoadCmd")
+        val x = s"$bqLoadCmd".!
         logger.info(s"Output exit code: $x")
         if (x != 0) throw BQLoadException("Error executing BQ load command")
       case Right(list) =>
         logger.info(s"No of BQ partitions: ${list.length}")
         list.foreach { case (src_path, partition) =>
-          val table_partition = destination_table + "$" + partition
-          val full_table_name = destination_dataset + "." + table_partition
-          val bq_load_cmd =
-            s"""bq load --replace --time_partitioning_field date --require_partition_filter=false --source_format=${source_format.toString} $full_table_name $src_path""".stripMargin
+          val tablePartition = destinationTable + "$" + partition
+          val fullTableName  = destinationDataset + "." + tablePartition
+          val bqLoadCmd =
+            s"""bq load --replace --time_partitioning_field date --require_partition_filter=false --source_format=${sourceFormat.toString} $fullTableName $src_path""".stripMargin
           logger.info(s"Loading data from path: $src_path")
-          logger.info(s"Destination table: $full_table_name")
-          logger.info(s"BQ Load command is: $bq_load_cmd")
-          val x = s"$bq_load_cmd".!
+          logger.info(s"Destination table: $fullTableName")
+          logger.info(s"BQ Load command is: $bqLoadCmd")
+          val x = s"$bqLoadCmd".!
           logger.info(s"Output exit code: $x")
           if (x != 0) throw BQLoadException("Error executing BQ load command")
         }
@@ -101,74 +109,73 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
   }
 
   override def loadPartitionedTable(
-      source_paths_partitions: Seq[(String, String)],
-      source_format: BQInputType,
-      destination_project: Option[String],
-      destination_dataset: String,
-      destination_table: String,
-      write_disposition: JobInfo.WriteDisposition,
-      create_disposition: JobInfo.CreateDisposition,
+      sourcePathsPartitions: Seq[(String, String)],
+      sourceFormat: BQInputType,
+      destinationProject: Option[String],
+      destinationDataset: String,
+      destinationTable: String,
+      writeDisposition: JobInfo.WriteDisposition,
+      createDisposition: JobInfo.CreateDisposition,
       schema: Option[Schema],
       parallelism: Int
   ): Task[Map[String, Long]] = {
-    logger.info(s"No of BQ partitions: ${source_paths_partitions.length}")
+    logger.info(s"No of BQ partitions: ${sourcePathsPartitions.length}")
     ZIO
-      .foreachParN(parallelism)(source_paths_partitions) { case (src_path, partition) =>
-        val table_partition = destination_table + "$" + partition
+      .foreachParN(parallelism)(sourcePathsPartitions) { case (src_path, partition) =>
         loadTable(
           src_path,
-          source_format,
-          destination_project,
-          destination_dataset,
-          table_partition,
-          write_disposition,
-          create_disposition
+          sourceFormat,
+          destinationProject,
+          destinationDataset,
+          destinationTable + "$" + partition,
+          writeDisposition,
+          createDisposition
         )
       }
       .map(x => x.flatten.toMap)
   }
 
   override def loadTable(
-      source_path: String,
-      source_format: BQInputType,
-      destination_project: Option[String],
-      destination_dataset: String,
-      destination_table: String,
-      write_disposition: JobInfo.WriteDisposition,
-      create_disposition: JobInfo.CreateDisposition,
+      sourcePath: String,
+      sourceFormat: BQInputType,
+      destinationProject: Option[String],
+      destinationDataset: String,
+      destinationTable: String,
+      writeDisposition: JobInfo.WriteDisposition,
+      createDisposition: JobInfo.CreateDisposition,
       schema: Option[Schema]
   ): Task[Map[String, Long]] = Task {
-    val tableId = destination_project match {
-      case Some(project) => TableId.of(project, destination_dataset, destination_table)
-      case None          => TableId.of(destination_dataset, destination_table)
+    val tableId = destinationProject match {
+      case Some(project) => TableId.of(project, destinationDataset, destinationTable)
+      case None          => TableId.of(destinationDataset, destinationTable)
     }
 
-    val jobConfiguration: JobConfiguration = source_format match {
+    val jobConfiguration: JobConfiguration = sourceFormat match {
       case BQInputType.BQ =>
         QueryJobConfiguration
-          .newBuilder(source_path)
+          .newBuilder(sourcePath)
           .setUseLegacySql(false)
           .setDestinationTable(tableId)
-          .setWriteDisposition(write_disposition)
-          .setCreateDisposition(create_disposition)
+          .setWriteDisposition(writeDisposition)
+          .setCreateDisposition(createDisposition)
           .setAllowLargeResults(true)
           .build()
       case ORC | PARQUET | CSV(_, _, _, _) =>
         schema match {
           case Some(s) =>
             LoadJobConfiguration
-              .builder(tableId, source_path)
-              .setFormatOptions(getFormatOptions(source_format))
+              .builder(tableId, sourcePath)
+              .setFormatOptions(getFormatOptions(sourceFormat))
               .setSchema(s)
-              .setWriteDisposition(write_disposition)
-              .setCreateDisposition(create_disposition)
+              .setWriteDisposition(writeDisposition)
+              .setCreateDisposition(createDisposition)
               .build()
           case None =>
             LoadJobConfiguration
-              .builder(tableId, source_path)
-              .setFormatOptions(getFormatOptions(source_format))
-              .setWriteDisposition(write_disposition)
-              .setCreateDisposition(create_disposition)
+              .builder(tableId, sourcePath)
+              .setFormatOptions(getFormatOptions(sourceFormat))
+              .setWriteDisposition(writeDisposition)
+              .setCreateDisposition(createDisposition)
               .build()
         }
       case _ => throw BQLoadException("Unsupported Input Type")
@@ -179,48 +186,48 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
     val job: Job     = client.create(JobInfo.newBuilder(jobConfiguration).setJobId(jobId).build())
 
     // Wait for the job to complete
-    val completedJob     = job.waitFor()
-    val destinationTable = client.getTable(tableId).getDefinition[StandardTableDefinition]
+    val completedJob        = job.waitFor()
+    val destinationTableDef = client.getTable(tableId).getDefinition[StandardTableDefinition]
 
     if (completedJob.getStatus.getError == null) {
-      logger.info(s"Source path: $source_path")
-      logger.info(s"Destination table: $destination_dataset.$destination_table")
+      logger.info(s"Source path: $sourcePath")
+      logger.info(s"Destination table: $destinationDataset.$destinationTable")
       logger.info(s"Job State: ${completedJob.getStatus.getState}")
-      logger.info(s"Loaded rows: ${destinationTable.getNumRows}")
-      logger.info(s"Loaded rows size: ${destinationTable.getNumBytes / 1000000.0} MB")
+      logger.info(s"Loaded rows: ${destinationTableDef.getNumRows}")
+      logger.info(s"Loaded rows size: ${destinationTableDef.getNumBytes / 1000000.0} MB")
     } else {
       throw BQLoadException(
-        s"""Could not load data in ${source_format.toString} format in table ${destination_dataset + "." + destination_table} due to error ${completedJob.getStatus.getError.getMessage}""".stripMargin
+        s"""Could not load data in ${sourceFormat.toString} format in table ${destinationDataset + "." + destinationTable} due to error ${completedJob.getStatus.getError.getMessage}""".stripMargin
       )
     }
-    Map(destination_table -> destinationTable.getNumRows)
+    Map(destinationTable -> destinationTableDef.getNumRows)
   }
 
   override def exportTable(
-      source_dataset: String,
-      source_table: String,
-      source_project: Option[String],
-      destination_path: String,
-      destination_file_name: Option[String],
-      destination_format: BQInputType,
-      destination_compression_type: String = "gzip"
+      sourceDataset: String,
+      sourceTable: String,
+      sourceProject: Option[String],
+      destinationPath: String,
+      destinationFileName: Option[String],
+      destinationFormat: BQInputType,
+      destinationCompressionType: String = "gzip"
   ): Task[Unit] = Task {
 
-    val tableId = source_project match {
-      case Some(project) => TableId.of(project, source_dataset, source_table)
-      case None          => TableId.of(source_dataset, source_table)
+    val tableId = sourceProject match {
+      case Some(project) => TableId.of(project, sourceDataset, sourceTable)
+      case None          => TableId.of(sourceDataset, sourceTable)
     }
 
-    val destinationFormat = destination_format match {
+    val destinationFormatStr = destinationFormat match {
       case CSV(_, _, _, _) => "CSV"
       case PARQUET         => "PARQUET"
       case fmt             => throw BQLoadException(s"Unsupported destination format $fmt")
     }
 
     val destinationUri =
-      destination_path + "/" + destination_file_name.getOrElse(s"part-*.${destinationFormat.toLowerCase}")
+      destinationPath + "/" + destinationFileName.getOrElse(s"part-*.${destinationFormatStr.toLowerCase}")
 
-    val extractJobConfiguration: ExtractJobConfiguration = destination_format match {
+    val extractJobConfiguration: ExtractJobConfiguration = destinationFormat match {
       case CSV(delimiter, _, _, _) =>
         ExtractJobConfiguration
           .newBuilder(tableId, destinationUri)
@@ -231,13 +238,13 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
         ExtractJobConfiguration
           .newBuilder(tableId, destinationUri)
           .setFormat(PARQUET.toString)
-          .setCompression(destination_compression_type)
+          .setCompression(destinationCompressionType)
           .build();
       case JSON(_) =>
         ExtractJobConfiguration
           .newBuilder(tableId, destinationUri)
           .setFormat(JSON.toString())
-          .setCompression(destination_compression_type)
+          .setCompression(destinationCompressionType)
           .build();
       case _ => throw BQLoadException("Unsupported Destination Format")
     }
@@ -246,14 +253,14 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
     val completedJob = job.waitFor()
 
     if (completedJob.getStatus.getError == null) {
-      logger.info(s"Source table: $source_dataset.$source_table")
-      logger.info(s"Destination path: $destination_path")
+      logger.info(s"Source table: $sourceDataset.$sourceTable")
+      logger.info(s"Destination path: $destinationPath")
       logger.info(s"Job State: ${completedJob.getStatus.getState}")
     } else if (completedJob.getStatus().getError() != null) {
       logger.error(s"BigQuery was unable to extract due to an error:" + job.getStatus().getError())
     } else {
       throw BQLoadException(
-        s"""Could not load data from bq table $source_dataset.$source_table to  location  $destination_file_name due to error ${completedJob.getStatus.getError.getMessage}""".stripMargin
+        s"""Could not load data from bq table $sourceDataset.$sourceTable to  location  $destinationFileName due to error ${completedJob.getStatus.getError.getMessage}""".stripMargin
       )
     }
   }

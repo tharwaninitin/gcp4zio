@@ -2,13 +2,17 @@ import Dependencies._
 import ScalaCompileOptions._
 import Versions._
 
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
 lazy val gcp4zio = (project in file("."))
   .settings(
     name         := "gcp4zio",
     version      := Gcp4ZioVersion,
     scalaVersion := scala212,
     libraryDependencies ++= core ++ testLibs,
-    crossScalaVersions := allScalaVersions,
+    crossScalaVersions         := allScalaVersions,
+    dependencyUpdatesFailBuild := true,
+    dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang"),
     scalacOptions ++= {
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, 12)) => s2copts ++ s212copts

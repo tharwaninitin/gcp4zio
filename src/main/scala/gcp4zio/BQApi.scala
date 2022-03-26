@@ -8,123 +8,123 @@ object BQApi {
     def executeQuery(query: String): F[Unit]
     def getData(query: String): F[Iterable[FieldValueList]]
     def loadTableFromLocalFile(
-        source_locations: Either[String, Seq[(String, String)]],
-        source_format: BQInputType,
-        destination_dataset: String,
-        destination_table: String
+        sourceLocations: Either[String, Seq[(String, String)]],
+        sourceFormat: BQInputType,
+        destinationDataset: String,
+        destinationTable: String
     ): F[Unit]
     def loadTable(
-        source_path: String,
-        source_format: BQInputType,
-        destination_project: Option[String],
-        destination_dataset: String,
-        destination_table: String,
-        write_disposition: JobInfo.WriteDisposition,
-        create_disposition: JobInfo.CreateDisposition,
+        sourcePath: String,
+        sourceFormat: BQInputType,
+        destinationProject: Option[String],
+        destinationDataset: String,
+        destinationTable: String,
+        writeDisposition: JobInfo.WriteDisposition,
+        createDisposition: JobInfo.CreateDisposition,
         schema: Option[Schema] = None
     ): F[Map[String, Long]]
     def loadPartitionedTable(
-        source_paths_partitions: Seq[(String, String)],
-        source_format: BQInputType,
-        destination_project: Option[String],
-        destination_dataset: String,
-        destination_table: String,
-        write_disposition: JobInfo.WriteDisposition,
-        create_disposition: JobInfo.CreateDisposition,
+        sourcePathsPartitions: Seq[(String, String)],
+        sourceFormat: BQInputType,
+        destinationProject: Option[String],
+        destinationDataset: String,
+        destinationTable: String,
+        writeDisposition: JobInfo.WriteDisposition,
+        createDisposition: JobInfo.CreateDisposition,
         schema: Option[Schema],
         parallelism: Int
     ): F[Map[String, Long]]
     def exportTable(
-        source_dataset: String,
-        source_table: String,
-        source_project: Option[String],
-        destination_path: String,
-        destination_file_name: Option[String],
-        destination_format: BQInputType,
-        destination_compression_type: String = "gzip"
+        sourceDataset: String,
+        sourceTable: String,
+        sourceProject: Option[String],
+        destinationPath: String,
+        destinationFileName: Option[String],
+        destinationFormat: BQInputType,
+        destinationCompressionType: String = "gzip"
     ): F[Unit]
   }
 
   def executeQuery(query: String): ZIO[BQEnv, Throwable, Unit]                = ZIO.accessM(_.get.executeQuery(query))
   def getData(query: String): ZIO[BQEnv, Throwable, Iterable[FieldValueList]] = ZIO.accessM(_.get.getData(query))
   def loadTableFromLocalFile(
-      source_locations: Either[String, Seq[(String, String)]],
-      source_format: BQInputType,
-      destination_dataset: String,
-      destination_table: String
+      sourceLocations: Either[String, Seq[(String, String)]],
+      sourceFormat: BQInputType,
+      destinationDataset: String,
+      destinationTable: String
   ): ZIO[BQEnv, Throwable, Unit] =
     ZIO.accessM(
       _.get.loadTableFromLocalFile(
-        source_locations,
-        source_format,
-        destination_dataset,
-        destination_table
+        sourceLocations,
+        sourceFormat,
+        destinationDataset,
+        destinationTable
       )
     )
   def loadTable(
-      source_path: String,
-      source_format: BQInputType,
-      destination_project: Option[String],
-      destination_dataset: String,
-      destination_table: String,
-      write_disposition: JobInfo.WriteDisposition = JobInfo.WriteDisposition.WRITE_TRUNCATE,
-      create_disposition: JobInfo.CreateDisposition = JobInfo.CreateDisposition.CREATE_NEVER,
+      sourcePath: String,
+      sourceFormat: BQInputType,
+      destinationProject: Option[String],
+      destinationDataset: String,
+      destinationTable: String,
+      writeDisposition: JobInfo.WriteDisposition = JobInfo.WriteDisposition.WRITE_TRUNCATE,
+      createDisposition: JobInfo.CreateDisposition = JobInfo.CreateDisposition.CREATE_NEVER,
       schema: Option[Schema] = None
   ): ZIO[BQEnv, Throwable, Map[String, Long]] =
     ZIO.accessM(
       _.get.loadTable(
-        source_path,
-        source_format,
-        destination_project,
-        destination_dataset,
-        destination_table,
-        write_disposition,
-        create_disposition,
+        sourcePath,
+        sourceFormat,
+        destinationProject,
+        destinationDataset,
+        destinationTable,
+        writeDisposition,
+        createDisposition,
         schema
       )
     )
   def loadPartitionedTable(
-      source_paths_partitions: Seq[(String, String)],
-      source_format: BQInputType,
-      destination_project: Option[String],
-      destination_dataset: String,
-      destination_table: String,
-      write_disposition: JobInfo.WriteDisposition,
-      create_disposition: JobInfo.CreateDisposition,
+      sourcePathsPartitions: Seq[(String, String)],
+      sourceFormat: BQInputType,
+      destinationProject: Option[String],
+      destinationDataset: String,
+      destinationTable: String,
+      writeDisposition: JobInfo.WriteDisposition,
+      createDisposition: JobInfo.CreateDisposition,
       schema: Option[Schema],
       parallelism: Int
   ): ZIO[BQEnv, Throwable, Map[String, Long]] =
     ZIO.accessM(
       _.get.loadPartitionedTable(
-        source_paths_partitions,
-        source_format,
-        destination_project,
-        destination_dataset,
-        destination_table,
-        write_disposition,
-        create_disposition,
+        sourcePathsPartitions,
+        sourceFormat,
+        destinationProject,
+        destinationDataset,
+        destinationTable,
+        writeDisposition,
+        createDisposition,
         schema,
         parallelism
       )
     )
   def exportTable(
-      source_dataset: String,
-      source_table: String,
-      source_project: Option[String],
-      destination_path: String,
-      destination_file_name: Option[String],
-      destination_format: BQInputType,
-      destination_compression_type: String = "gzip"
+      sourceDataset: String,
+      sourceTable: String,
+      sourceProject: Option[String],
+      destinationPath: String,
+      destinationFileName: Option[String],
+      destinationFormat: BQInputType,
+      destinationCompressionType: String = "gzip"
   ): ZIO[BQEnv, Throwable, Unit] =
     ZIO.accessM(
       _.get.exportTable(
-        source_dataset,
-        source_table,
-        source_project,
-        destination_path,
-        destination_file_name,
-        destination_format,
-        destination_compression_type
+        sourceDataset,
+        sourceTable,
+        sourceProject,
+        destinationPath,
+        destinationFileName,
+        destinationFormat,
+        destinationCompressionType
       )
     )
 }

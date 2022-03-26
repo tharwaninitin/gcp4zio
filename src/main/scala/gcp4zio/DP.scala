@@ -9,20 +9,20 @@ case class DP(client: ClusterControllerClient) extends DPApi.Service {
 
   def createDataproc(clusterName: String, project: String, region: String, props: DataprocProperties): BlockingTask[Cluster] = ZIO
     .fromFutureJava {
-      val end_point_config = EndpointConfig.newBuilder().setEnableHttpPortAccess(true)
-      val software_config  = SoftwareConfig.newBuilder().setImageVersion(props.image_version)
-      val disk_config_m =
+      val endPointConfig = EndpointConfig.newBuilder().setEnableHttpPortAccess(true)
+      val softwareConfig = SoftwareConfig.newBuilder().setImageVersion(props.image_version)
+      val diskConfigM =
         DiskConfig
           .newBuilder()
           .setBootDiskType(props.boot_disk_type)
           .setBootDiskSizeGb(props.master_boot_disk_size_gb)
-      val disk_config_w =
+      val diskConfigW =
         DiskConfig
           .newBuilder()
           .setBootDiskType(props.boot_disk_type)
           .setBootDiskSizeGb(props.worker_boot_disk_size_gb)
 
-      val gce_cluster_builder = props.subnet_uri match {
+      val gceClusterBuilder = props.subnet_uri match {
         case Some(value) =>
           GceClusterConfig
             .newBuilder()
@@ -38,45 +38,45 @@ case class DP(client: ClusterControllerClient) extends DPApi.Service {
             .addServiceAccountScopes("https://www.googleapis.com/auth/cloud-platform")
       }
 
-      val gce_cluster_config = props.service_account match {
-        case Some(value) => gce_cluster_builder.setServiceAccount(value)
-        case _           => gce_cluster_builder
+      val gceClusterConfig = props.service_account match {
+        case Some(value) => gceClusterBuilder.setServiceAccount(value)
+        case _           => gceClusterBuilder
       }
 
-      val master_config = InstanceGroupConfig.newBuilder
+      val masterConfig = InstanceGroupConfig.newBuilder
         .setMachineTypeUri(props.master_machine_type_uri)
         .setNumInstances(props.master_num_instance)
-        .setDiskConfig(disk_config_m)
+        .setDiskConfig(diskConfigM)
         .build
-      val worker_config = InstanceGroupConfig.newBuilder
+      val workerConfig = InstanceGroupConfig.newBuilder
         .setMachineTypeUri(props.worker_machine_type_uri)
         .setNumInstances(props.worker_num_instance)
-        .setDiskConfig(disk_config_w)
+        .setDiskConfig(diskConfigW)
         .build
-      val cluster_config_builder = ClusterConfig.newBuilder
-        .setMasterConfig(master_config)
-        .setWorkerConfig(worker_config)
-        .setSoftwareConfig(software_config)
+      val clusterConfigBuilder = ClusterConfig.newBuilder
+        .setMasterConfig(masterConfig)
+        .setWorkerConfig(workerConfig)
+        .setSoftwareConfig(softwareConfig)
         .setConfigBucket(props.bucket_name)
-        .setGceClusterConfig(gce_cluster_config)
-        .setEndpointConfig(end_point_config)
+        .setGceClusterConfig(gceClusterConfig)
+        .setEndpointConfig(endPointConfig)
 
-      val cluster_config = props.idle_deletion_duration_sec match {
+      val clusterConfig = props.idle_deletion_duration_sec match {
         case Some(value) =>
-          cluster_config_builder
+          clusterConfigBuilder
             .setLifecycleConfig(
               LifecycleConfig.newBuilder().setIdleDeleteTtl(Duration.newBuilder().setSeconds(value))
             )
             .build
-        case _ => cluster_config_builder.build
+        case _ => clusterConfigBuilder.build
       }
 
-      val cluster = Cluster.newBuilder.setClusterName(clusterName).setConfig(cluster_config).build
+      val cluster = Cluster.newBuilder.setClusterName(clusterName).setConfig(clusterConfig).build
 
-      val create_cluster_async_request = client.createClusterAsync(project, region, cluster)
+      val createClusterAsyncRequest = client.createClusterAsync(project, region, cluster)
 
       logger.info(s"Submitting cluster creation request for $clusterName")
-      create_cluster_async_request
+      createClusterAsyncRequest
     }
     .tapBoth(
       e => UIO(logger.error(s"Cluster creation failed with error ${e.getMessage}")),
