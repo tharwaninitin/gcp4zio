@@ -27,7 +27,8 @@ object BQSchemaMappingTestSuite {
       val is_active: Boolean
   )
 
-  val op = ArrayBuffer(
+  @SuppressWarnings(Array("org.wartremover.warts.MutableDataStructures"))
+  private val op = ArrayBuffer(
     ("userId", LegacySQLTypeName.STRING),
     ("movieId", LegacySQLTypeName.INTEGER),
     ("rating", LegacySQLTypeName.INTEGER),
@@ -40,11 +41,11 @@ object BQSchemaMappingTestSuite {
   val spec: ZSpec[environment.TestEnvironment, Any] = suite("Encoder Tests")(
     test("Encoder[Ratings1] should return list of field names and field types") {
       val schema: Option[Schema] = Encoder[Ratings1]
-      assertTrue(schema.get.getFields.asScala.map(x => (x.getName, x.getType)) == op)
+      assertTrue(schema.map(_.getFields.asScala.map(x => (x.getName, x.getType))).contains(op))
     },
     test("Encoder[Ratings2] should return list of field names and field types") {
       val schema: Option[Schema] = Encoder[Ratings2]
-      assertTrue(schema.get.getFields.asScala.map(x => (x.getName, x.getType)) == op)
+      assertTrue(schema.map(_.getFields.asScala.map(x => (x.getName, x.getType))).contains(op))
     }
   )
 }

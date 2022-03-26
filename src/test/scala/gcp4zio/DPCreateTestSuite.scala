@@ -13,7 +13,7 @@ object DPCreateTestSuite extends TestHelper {
         network_tags = dpNetworkTags,
         service_account = dpServiceAccount
       )
-      val step = DPApi.createDataproc(dpCluster, gcpProjectId.get, gcpRegion.get, dpProps)
+      val step = DPApi.createDataproc(dpCluster, gcpProjectId.getOrElse("NA"), gcpRegion.getOrElse("NA"), dpProps)
       assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     }
 }

@@ -18,10 +18,10 @@ object GCSCopyTestSuite extends TestHelper {
       testM("Execute copyObjectsGCStoGCS single file") {
         val step =
           GCSApi.copyObjectsGCStoGCS(
-            src_bucket = gcsBucket,
-            src_prefix = Some("temp/test/ratings.csv"),
-            target_bucket = gcsBucket,
-            target_prefix = Some("temp2/test/ratings.csv")
+            srcBucket = gcsBucket,
+            srcPrefix = Some("temp/test/ratings.csv"),
+            targetBucket = gcsBucket,
+            targetPrefix = Some("temp2/test/ratings.csv")
           )
         assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       },
@@ -30,8 +30,8 @@ object GCSCopyTestSuite extends TestHelper {
           GCSApi.copyObjectsGCStoGCS(
             gcsBucket,
             Some("temp/test/"),
-            target_bucket = gcsBucket,
-            target_prefix = Some("temp2/test/")
+            targetBucket = gcsBucket,
+            targetPrefix = Some("temp2/test/")
           )
         assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       }

@@ -11,11 +11,11 @@ object BQStepsTestSuite extends TestHelper {
   case class RatingCSV(userId: Long, movieId: Long, rating: Double, timestamp: Long)
 
   // STEP 1: Define step
-  val inputFileParquet = s"gs://$gcsBucket/temp/ratings.parquet"
-  val inputFileCsv     = s"gs://$gcsBucket/temp/ratings.csv"
-  val bqExportDestPath = s"gs://$gcsBucket/temp/etlflow/"
-  val outputTable      = "ratings"
-  val outputDataset    = "dev"
+  private val inputFileParquet = s"gs://$gcsBucket/temp/ratings.parquet"
+  private val inputFileCsv     = s"gs://$gcsBucket/temp/ratings.csv"
+  private val bqExportDestPath = s"gs://$gcsBucket/temp/etlflow/"
+  private val outputTable      = "ratings"
+  private val outputDataset    = "dev"
 
   val spec: ZSpec[environment.TestEnvironment with BQEnv, Any] = suite("BQ Steps")(
     testM("Execute BQLoad PARQUET step") {
