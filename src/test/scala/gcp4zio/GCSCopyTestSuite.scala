@@ -8,19 +8,19 @@ object GCSCopyTestSuite extends TestHelper {
   val spec: ZSpec[environment.TestEnvironment with GCSEnv, Any] =
     suite("GCS Copy Apis")(
       testM("Execute copyObjectsLOCALtoGCS single file") {
-        val step = GCSApi.copyObjectsLOCALtoGCS(file_path_csv, gcs_bucket, "temp/test/ratings.csv", 2, true)
+        val step = GCSApi.copyObjectsLOCALtoGCS(filePathCsv, gcsBucket, "temp/test/ratings.csv", 2, true)
         assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       },
       testM("Execute copyObjectsLOCALtoGCS directory") {
-        val step = GCSApi.copyObjectsLOCALtoGCS(file_path_csv.replaceAll("ratings.csv", ""), gcs_bucket, "temp/test", 2, true)
+        val step = GCSApi.copyObjectsLOCALtoGCS(filePathCsv.replaceAll("ratings.csv", ""), gcsBucket, "temp/test", 2, true)
         assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       },
       testM("Execute copyObjectsGCStoGCS single file") {
         val step =
           GCSApi.copyObjectsGCStoGCS(
-            src_bucket = gcs_bucket,
+            src_bucket = gcsBucket,
             src_prefix = Some("temp/test/ratings.csv"),
-            target_bucket = gcs_bucket,
+            target_bucket = gcsBucket,
             target_prefix = Some("temp2/test/ratings.csv")
           )
         assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
@@ -28,9 +28,9 @@ object GCSCopyTestSuite extends TestHelper {
       testM("Execute copyObjectsGCStoGCS directory") {
         val step =
           GCSApi.copyObjectsGCStoGCS(
-            gcs_bucket,
+            gcsBucket,
             Some("temp/test/"),
-            target_bucket = gcs_bucket,
+            target_bucket = gcsBucket,
             target_prefix = Some("temp2/test/")
           )
         assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))

@@ -21,18 +21,18 @@ object GCSApi {
         options: List[BlobListOption]
     ): Stream[Throwable, Blob]
     def copyObjectsGCStoGCS(
-        src_bucket: String,
-        src_prefix: Option[String],
-        src_recursive: Boolean,
-        src_options: List[BlobListOption],
-        target_bucket: String,
-        target_prefix: Option[String],
+        srcBucket: String,
+        srcPrefix: Option[String],
+        srcRecursive: Boolean,
+        srcOptions: List[BlobListOption],
+        targetBucket: String,
+        targetPrefix: Option[String],
         parallelism: Int
     ): Task[Unit]
     def copyObjectsLOCALtoGCS(
-        src_path: String,
-        target_bucket: String,
-        target_prefix: String,
+        srcPath: String,
+        targetBucket: String,
+        targetPrefix: String,
         parallelism: Int,
         overwrite: Boolean
     ): Task[Unit]
@@ -58,31 +58,31 @@ object GCSApi {
   ): ZStream[GCSEnv, Throwable, Blob] =
     ZStream.accessStream(_.get.listObjects(bucket, prefix, recursive, options))
   def copyObjectsGCStoGCS(
-      src_bucket: String,
-      src_prefix: Option[String] = None,
-      src_recursive: Boolean = true,
-      src_options: List[BlobListOption] = List.empty,
-      target_bucket: String,
-      target_prefix: Option[String] = None,
+      srcBucket: String,
+      srcPrefix: Option[String] = None,
+      srcRecursive: Boolean = true,
+      srcOptions: List[BlobListOption] = List.empty,
+      targetBucket: String,
+      targetPrefix: Option[String] = None,
       parallelism: Int = 2
   ): ZIO[GCSEnv, Throwable, Unit] =
     ZIO.accessM(
       _.get.copyObjectsGCStoGCS(
-        src_bucket,
-        src_prefix,
-        src_recursive,
-        src_options,
-        target_bucket,
-        target_prefix,
+        srcBucket,
+        srcPrefix,
+        srcRecursive,
+        srcOptions,
+        targetBucket,
+        targetPrefix,
         parallelism
       )
     )
   def copyObjectsLOCALtoGCS(
-      src_path: String,
-      target_bucket: String,
-      target_prefix: String,
+      srcPath: String,
+      targetBucket: String,
+      targetPrefix: String,
       parallelism: Int,
       overwrite: Boolean
   ): ZIO[GCSEnv, Throwable, Unit] =
-    ZIO.accessM(_.get.copyObjectsLOCALtoGCS(src_path, target_bucket, target_prefix, parallelism, overwrite))
+    ZIO.accessM(_.get.copyObjectsLOCALtoGCS(srcPath, targetBucket, targetPrefix, parallelism, overwrite))
 }

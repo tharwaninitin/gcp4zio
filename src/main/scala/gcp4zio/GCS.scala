@@ -9,6 +9,7 @@ import java.io.{IOException, InputStream, OutputStream}
 import java.nio.channels.Channels
 import java.nio.file.{Files, Path, Paths}
 
+@SuppressWarnings(Array("org.wartremover.warts.ToString"))
 case class GCS(client: Storage) extends GCSApi.Service {
 
   override def listObjects(
@@ -78,45 +79,45 @@ case class GCS(client: Storage) extends GCSApi.Service {
     ZStream.fromInputStreamManaged(is, chunkSize)
   }
 
-  private def getTargetPath(src_path: String, target_path: String, current_path: String): String =
-    if (current_path == src_path) target_path
-    else (target_path + "/" + current_path.replace(src_path, "")).replaceAll("//+", "/")
+  private def getTargetPath(srcPath: String, targetPath: String, currentPath: String): String =
+    if (currentPath == srcPath) targetPath
+    else (targetPath + "/" + currentPath.replace(srcPath, "")).replaceAll("//+", "/")
 
   override def copyObjectsGCStoGCS(
-      src_bucket: String,
-      src_prefix: Option[String],
-      src_recursive: Boolean,
-      src_options: List[BlobListOption],
-      target_bucket: String,
-      target_prefix: Option[String],
+      srcBucket: String,
+      srcPrefix: Option[String],
+      srcRecursive: Boolean,
+      srcOptions: List[BlobListOption],
+      targetBucket: String,
+      targetPrefix: Option[String],
       parallelism: Int
-  ): Task[Unit] = listObjects(src_bucket, src_prefix, src_recursive, src_options)
+  ): Task[Unit] = listObjects(srcBucket, srcPrefix, srcRecursive, srcOptions)
     .mapMPar(parallelism) { blob =>
       Task {
-        if (target_prefix.isEmpty) {
-          logger.info(s"Copying object from gs://$src_bucket/${blob.getName} to gs://$target_bucket/${blob.getName}")
-          blob.copyTo(target_bucket)
-        } else {
-          val target_path = getTargetPath(src_prefix.getOrElse(""), target_prefix.get, blob.getName)
-          logger.info(s"Copying object from gs://$src_bucket/${blob.getName} to gs://$target_bucket/$target_path")
-          blob.copyTo(target_bucket, target_path)
+        targetPrefix.fold {
+          logger.info(s"Copying object from gs://$srcBucket/${blob.getName} to gs://$targetBucket/${blob.getName}")
+          blob.copyTo(targetBucket)
+        } { tp =>
+          val targetPath = getTargetPath(srcPrefix.getOrElse(""), tp, blob.getName)
+          logger.info(s"Copying object from gs://$srcBucket/${blob.getName} to gs://$targetBucket/$targetPath")
+          blob.copyTo(targetBucket, targetPath)
         }
       }
     }
     .runDrain
 
   override def copyObjectsLOCALtoGCS(
-      src_path: String,
-      target_bucket: String,
-      target_prefix: String,
+      srcPath: String,
+      targetBucket: String,
+      targetPrefix: String,
       parallelism: Int,
       overwrite: Boolean
   ): Task[Unit] = {
     val opts = if (overwrite) List.empty else List(BlobTargetOption.doesNotExist())
-    listLocalFsObjects(src_path)
+    listLocalFsObjects(srcPath)
       .mapMPar(parallelism) { path =>
-        val target_path = getTargetPath(src_path, target_prefix, path.toString)
-        putObject(target_bucket, target_path, path, opts)
+        val targetPath = getTargetPath(srcPath, targetPrefix, path.toString)
+        putObject(targetBucket, targetPath, path, opts)
       }
       .runDrain
   }

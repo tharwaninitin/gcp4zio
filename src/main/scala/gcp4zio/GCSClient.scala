@@ -12,19 +12,19 @@ object GCSClient {
   }
 
   def apply(path: Option[String]): Storage = {
-    val env_path: String = sys.env.getOrElse("GOOGLE_APPLICATION_CREDENTIALS", "NOT_SET_IN_ENV")
+    val envPath: String = sys.env.getOrElse("GOOGLE_APPLICATION_CREDENTIALS", "NOT_SET_IN_ENV")
 
     path match {
       case Some(p) =>
         logger.info("Using GCP credentials from values passed in function")
         getStorage(p)
       case None =>
-        if (env_path == "NOT_SET_IN_ENV") {
+        if (envPath == "NOT_SET_IN_ENV") {
           logger.info("Using GCP credentials from local sdk")
           StorageOptions.newBuilder().build().getService
         } else {
           logger.info("Using GCP credentials from environment variable GOOGLE_APPLICATION_CREDENTIALS")
-          getStorage(env_path)
+          getStorage(envPath)
         }
     }
   }

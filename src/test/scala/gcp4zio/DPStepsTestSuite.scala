@@ -30,7 +30,7 @@ object DPStepsTestSuite extends TestHelper {
     suite("Dataproc Job APIs")(
       testM("executeHiveJob") {
         val step = DPJobApi
-          .executeHiveJob("SELECT 1 AS ONE", dp_cluster_name, gcp_project_id.get, gcp_region.get)
+          .executeHiveJob("SELECT 1 AS ONE", dpCluster, gcpProjectId.get, gcpRegion.get)
           .flatMap(printGcsLogs)
         assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       },
@@ -39,7 +39,7 @@ object DPStepsTestSuite extends TestHelper {
         val conf      = Map("spark.executor.memory" -> "1g", "spark.driver.memory" -> "1g")
         val mainClass = "org.apache.spark.examples.SparkPi"
         val step = DPJobApi
-          .executeSparkJob(List("1000"), mainClass, libs, conf, dp_cluster_name, gcp_project_id.get, gcp_region.get)
+          .executeSparkJob(List("1000"), mainClass, libs, conf, dpCluster, gcpProjectId.get, gcpRegion.get)
           .flatMap(printGcsLogs)
         assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       }
