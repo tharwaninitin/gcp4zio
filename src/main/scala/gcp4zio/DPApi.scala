@@ -6,7 +6,7 @@ import zio.blocking.Blocking
 
 object DPApi {
   trait Service {
-    def createDataproc(clusterName: String, project: String, region: String, props: DataprocProperties): BlockingTask[Cluster]
+    def createDataproc(clusterName: String, project: String, region: String, config: ClusterProps): BlockingTask[Cluster]
     def deleteDataproc(clusterName: String, project: String, region: String): BlockingTask[Unit]
   }
 
@@ -14,9 +14,9 @@ object DPApi {
       clusterName: String,
       project: String,
       region: String,
-      props: DataprocProperties
+      config: ClusterProps
   ): ZIO[DPEnv with Blocking, Throwable, Cluster] =
-    ZIO.accessM(_.get.createDataproc(clusterName, project, region, props))
+    ZIO.accessM(_.get.createDataproc(clusterName, project, region, config))
   def deleteDataproc(clusterName: String, project: String, region: String): ZIO[DPEnv with Blocking, Throwable, Unit] =
     ZIO.accessM(_.get.deleteDataproc(clusterName, project, region))
 }

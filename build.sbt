@@ -9,7 +9,7 @@ lazy val gcp4zio = (project in file("."))
     name         := "gcp4zio",
     version      := Gcp4ZioVersion,
     scalaVersion := scala212,
-    libraryDependencies ++= core ++ testLibs,
+    libraryDependencies ++= javaLibs ++ scalaLibs ++ testLibs,
     crossScalaVersions         := allScalaVersions,
     dependencyUpdatesFailBuild := true,
     dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang"),

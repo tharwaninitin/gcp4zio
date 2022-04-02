@@ -17,21 +17,21 @@ package object gcp4zio extends ApplicationLogger {
 
   case class BQLoadException(msg: String) extends RuntimeException(msg)
 
-  case class DataprocProperties(
-      bucket_name: String,
-      internal_ip_only: Boolean = true,
-      subnet_uri: Option[String] = None,
-      network_tags: List[String] = List.empty,
-      service_account: Option[String] = None,
-      idle_deletion_duration_sec: Option[Long] = Some(1800L),
-      master_machine_type_uri: String = "n1-standard-4",
-      worker_machine_type_uri: String = "n1-standard-4",
-      image_version: String = "1.5-debian10",
-      boot_disk_type: String = "pd-ssd",
-      master_boot_disk_size_gb: Int = 400,
-      worker_boot_disk_size_gb: Int = 200,
-      master_num_instance: Int = 1,
-      worker_num_instance: Int = 3
+  case class ClusterProps(
+      bucketName: String,
+      internalIpOnly: Boolean = true,
+      subnetUri: Option[String] = None,
+      networkTags: List[String] = List.empty,
+      serviceAccount: Option[String] = None,
+      idleDeletionDurationSecs: Option[Long] = Some(1800L),
+      masterMachineType: String = "n1-standard-4",
+      workerMachineType: String = "n1-standard-4",
+      imageVersion: String = "1.5-debian10",
+      bootDiskType: String = "pd-ssd",
+      masterBootDiskSizeGb: Int = 400,
+      workerBootDiskSizeGb: Int = 200,
+      masterNumInstance: Int = 1,
+      workerNumInstance: Int = 3
   )
 
   sealed trait BQInputType extends Serializable
