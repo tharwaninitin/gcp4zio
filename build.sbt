@@ -7,7 +7,6 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 lazy val gcp4zio = (project in file("."))
   .settings(
     name         := "gcp4zio",
-    version      := Gcp4ZioVersion,
     scalaVersion := scala212,
     libraryDependencies ++= javaLibs ++ scalaLibs ++ testLibs,
     crossScalaVersions         := allScalaVersions,
