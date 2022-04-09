@@ -22,10 +22,9 @@ def setReleaseVersionFunction(compatibilityIntention: Compatibility): String => 
   }
 }
 
-lazy val setAndCommitNextCompatibilityIntention =
-  taskKey[Unit]("Set versionPolicyIntention to Compatibility.BinaryAndSourceCompatible, and commit the change")
+lazy val setNextCompatibilityIntention = taskKey[Unit]("Set versionPolicyIntention to Compatibility.BinaryAndSourceCompatible")
 
-ThisBuild / setAndCommitNextCompatibilityIntention := {
+ThisBuild / setNextCompatibilityIntention := {
   val log       = streams.value.log
   val intention = (ThisBuild / versionPolicyIntention).value
   if (intention == Compatibility.BinaryAndSourceCompatible) {
@@ -36,15 +35,6 @@ ThisBuild / setAndCommitNextCompatibilityIntention := {
       new File("compatibility.sbt"),
       "ThisBuild / versionPolicyIntention := Compatibility.BinaryAndSourceCompatible\n"
     )
-    val gitAddExitValue =
-      sys.process.Process("git add compatibility.sbt").run(log).exitValue()
-    assert(gitAddExitValue == 0, s"Command failed with exit status $gitAddExitValue")
-    val gitCommitExitValue =
-      sys.process
-        .Process(Seq("git", "commit", "-m", "Reset compatibility intention"))
-        .run(log)
-        .exitValue()
-    assert(gitCommitExitValue == 0, s"Command failed with exist status $gitCommitExitValue")
   }
 }
 
@@ -54,17 +44,11 @@ ThisBuild / setAndCommitNextCompatibilityIntention := {
 releaseIgnoreUntrackedFiles := true
 releaseCrossBuild           := false
 releaseProcess := Seq[ReleaseStep](
-  checkSnapshotDependencies,                // : ReleaseStep
-  inquireVersions,                          // : ReleaseStep
-  setReleaseVersion,                        // : ReleaseStep
-  releaseStepCommand("versionPolicyCheck"), // Run task `versionCheck` after the release version is set
-  releaseStepTask(
-    setAndCommitNextCompatibilityIntention
-  ), // Reset compatibility intention to `Compatibility.BinaryAndSourceCompatible`
-  // commitReleaseVersion,                            // : ReleaseStep, performs the initial git checks
-  // tagRelease,     // : ReleaseStep
-  setNextVersion, // : ReleaseStep
-  // commitNextVersion,                               // : ReleaseStep
-  releaseStepCommandAndRemaining("+publish") // : ReleaseStep, checks whether `publishTo` is properly set up
-  // pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
+  checkSnapshotDependencies,
+  inquireVersions,
+  setReleaseVersion,
+  releaseStepCommand("versionPolicyCheck"),       // Run task `versionPolicyCheck` after the release version is set
+  releaseStepTask(setNextCompatibilityIntention), // Reset compatibility intention to `Compatibility.BinaryAndSourceCompatible`
+  setNextVersion,
+  releaseStepCommandAndRemaining("+publish")
 )
