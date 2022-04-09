@@ -5,10 +5,9 @@ ThisBuild / publishTo := {
   if (isSnapshot.value) Some("snapshots".at(nexus + "content/repositories/snapshots"))
   else Some("releases".at(nexus + "service/local/staging/deploy/maven2"))
 }
-ThisBuild / organization           := "com.github.tharwaninitin"
-ThisBuild / publishMavenStyle      := true
-ThisBuild / versionScheme          := Some("early-semver")
-ThisBuild / versionPolicyIntention := Compatibility.BinaryAndSourceCompatible
+ThisBuild / organization      := "com.github.tharwaninitin"
+ThisBuild / publishMavenStyle := true
+ThisBuild / versionScheme     := Some("early-semver")
 
 // Optional Publish Settings
 ThisBuild / organizationName     := "github"
