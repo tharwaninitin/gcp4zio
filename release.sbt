@@ -43,12 +43,15 @@ ThisBuild / setNextCompatibilityIntention := {
  */
 releaseIgnoreUntrackedFiles := true
 releaseCrossBuild           := false
+releaseNextVersion := { ver =>
+  Version(ver).map(_.bump(releaseVersionBump.value).string).getOrElse(versionFormatError(ver))
+}
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
   inquireVersions,
   setReleaseVersion,
   releaseStepCommand("versionPolicyCheck"),       // Run task `versionPolicyCheck` after the release version is set
   releaseStepTask(setNextCompatibilityIntention), // Reset compatibility intention to `Compatibility.BinaryAndSourceCompatible`
-  setNextVersion,
-  releaseStepCommandAndRemaining("+publish")
+  releaseStepCommandAndRemaining("+publish"),
+  setNextVersion
 )
