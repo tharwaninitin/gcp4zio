@@ -1,4 +1,4 @@
-package utils
+package gcp4zio.utils
 
 import org.slf4j.{Logger, LoggerFactory}
 

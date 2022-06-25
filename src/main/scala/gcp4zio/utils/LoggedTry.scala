@@ -1,4 +1,4 @@
-package utils
+package gcp4zio.utils
 
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}

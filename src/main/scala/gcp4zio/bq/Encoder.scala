@@ -1,6 +1,7 @@
-package utils
+package gcp4zio.bq
 
 import com.google.cloud.bigquery.{Field, LegacySQLTypeName, Schema}
+import gcp4zio.utils.{ApplicationLogger, LoggedTry}
 import java.util
 import scala.reflect.ClassTag
 import scala.jdk.CollectionConverters._

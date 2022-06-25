@@ -1,6 +1,10 @@
 package gcp4zio
 
+import org.slf4j.{Logger, LoggerFactory}
+
 trait TestHelper {
+  lazy val logger: Logger = LoggerFactory.getLogger(getClass.getName)
+
   lazy val gcpProjectId: Option[String] = sys.env.get("GCP_PROJECT_ID")
   lazy val gcpRegion: Option[String]    = sys.env.get("GCP_REGION")
 

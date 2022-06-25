@@ -1,29 +1,31 @@
 package gcp4zio
+package gcs
 
 import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
-import com.google.cloud.bigquery.{BigQuery, BigQueryOptions}
+import com.google.cloud.storage.{Storage, StorageOptions}
 import java.io.FileInputStream
 
-object BQClient {
+object GCSClient {
 
-  private def getBQ(path: String): BigQuery = {
+  private def getStorage(path: String): Storage = {
     val credentials: GoogleCredentials = ServiceAccountCredentials.fromStream(new FileInputStream(path))
-    BigQueryOptions.newBuilder().setCredentials(credentials).build().getService
+    StorageOptions.newBuilder().setCredentials(credentials).build().getService
   }
 
-  def apply(path: Option[String] = None): BigQuery = {
+  def apply(path: Option[String]): Storage = {
     val envPath: String = sys.env.getOrElse("GOOGLE_APPLICATION_CREDENTIALS", "NOT_SET_IN_ENV")
+
     path match {
       case Some(p) =>
         logger.info("Using GCP credentials from values passed in function")
-        getBQ(p)
+        getStorage(p)
       case None =>
         if (envPath == "NOT_SET_IN_ENV") {
           logger.info("Using GCP credentials from local sdk")
-          BigQueryOptions.getDefaultInstance.getService
+          StorageOptions.newBuilder().build().getService
         } else {
           logger.info("Using GCP credentials from environment variable GOOGLE_APPLICATION_CREDENTIALS")
-          getBQ(envPath)
+          getStorage(envPath)
         }
     }
   }

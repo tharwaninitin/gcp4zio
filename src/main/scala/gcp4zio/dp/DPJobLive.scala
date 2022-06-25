@@ -1,12 +1,13 @@
 package gcp4zio
+package dp
 
 import com.google.cloud.dataproc.v1._
-import zio.{Managed, Task, TaskLayer}
+import zio.{Task, TaskLayer, ZIO, ZLayer}
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
 
 @SuppressWarnings(Array("org.wartremover.warts.While", "org.wartremover.warts.Var", "org.wartremover.warts.Throw"))
-case class DPJob(client: JobControllerClient) extends DPJobApi.Service {
+case class DPJobLive(client: JobControllerClient) extends DPJobApi[Task] {
 
   private def submitAndWait(projectId: String, region: String, job: Job): Job = {
     val response = client.submitJob(projectId, region, job)
@@ -42,7 +43,7 @@ case class DPJob(client: JobControllerClient) extends DPJobApi.Service {
       clusterName: String,
       project: String,
       region: String
-  ): Task[Job] = Task {
+  ): Task[Job] = ZIO.attempt {
     logger.info(s"""Trying to submit spark job on Dataproc with Configurations:
                    |region => $region
                    |project => $project
@@ -65,7 +66,7 @@ case class DPJob(client: JobControllerClient) extends DPJobApi.Service {
     submitAndWait(project, region, job)
   }
 
-  def executeHiveJob(query: String, clusterName: String, project: String, region: String): Task[Job] = Task {
+  def executeHiveJob(query: String, clusterName: String, project: String, region: String): Task[Job] = ZIO.attempt {
     logger.info(s"""Trying to submit hive job on Dataproc with Configurations:
                    |region => $region
                    |project => $project
@@ -79,6 +80,7 @@ case class DPJob(client: JobControllerClient) extends DPJobApi.Service {
   }
 }
 
-object DPJob {
-  def live(endpoint: String): TaskLayer[DPJobEnv] = Managed.fromAutoCloseable(DPJobClient(endpoint)).map(dp => DPJob(dp)).toLayer
+object DPJobLive {
+  def apply(endpoint: String): TaskLayer[DPJobEnv] =
+    ZLayer.scoped(ZIO.fromAutoCloseable(DPJobClient(endpoint)).map(dp => DPJobLive(dp)))
 }

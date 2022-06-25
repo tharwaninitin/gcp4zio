@@ -1,8 +1,8 @@
 package gcp4zio
+package gcs
 
 import com.google.cloud.storage.Storage.{BlobListOption, BlobTargetOption, BlobWriteOption}
 import com.google.cloud.storage.{Blob, BlobId, BlobInfo, Storage}
-import gcp4zio.GCS._
 import zio._
 import zio.stream._
 import java.io.{IOException, InputStream, OutputStream}
@@ -10,7 +10,7 @@ import java.nio.channels.Channels
 import java.nio.file.{Files, Path, Paths}
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-case class GCS(client: Storage) extends GCSApi.Service {
+case class GCSLive(client: Storage) extends GCSApi {
 
   override def listObjects(
       bucket: String,
@@ -20,22 +20,26 @@ case class GCS(client: Storage) extends GCSApi.Service {
   ): Stream[Throwable, Blob] = {
     val inputOptions    = prefix.map(BlobListOption.prefix).toList ::: options
     val blobListOptions = if (recursive) inputOptions else BlobListOption.currentDirectory() :: inputOptions
-    Stream.fromJavaIterator(client.list(bucket, blobListOptions: _*).iterateAll().iterator())
+    ZStream.fromJavaIterator(client.list(bucket, blobListOptions: _*).iterateAll().iterator())
   }
 
-  override def lookupObject(bucket: String, prefix: String): Task[Boolean] = Task {
-    val blobId = BlobId.of(bucket, prefix)
-    val blob   = client.get(blobId)
-    blob.exists()
-  }.catchAll(_ => UIO(false))
+  override def lookupObject(bucket: String, prefix: String): Task[Boolean] = ZIO
+    .attempt {
+      val blobId = BlobId.of(bucket, prefix)
+      val blob   = client.get(blobId)
+      blob.exists()
+    }
+    .catchAll(_ => ZIO.succeed(false))
 
-  override def deleteObject(bucket: String, prefix: String): Task[Boolean] = Task {
-    val blobId = BlobId.of(bucket, prefix)
-    logger.info(s"Deleting blob $blobId")
-    client.delete(blobId)
-  }.catchAll(_ => UIO(false))
+  override def deleteObject(bucket: String, prefix: String): Task[Boolean] = ZIO
+    .attempt {
+      val blobId = BlobId.of(bucket, prefix)
+      logger.info(s"Deleting blob $blobId")
+      client.delete(blobId)
+    }
+    .catchAll(_ => ZIO.succeed(false))
 
-  override def putObject(bucket: String, prefix: String, file: Path, options: List[BlobTargetOption]): Task[Blob] = Task {
+  override def putObject(bucket: String, prefix: String, file: Path, options: List[BlobTargetOption]): Task[Blob] = ZIO.attempt {
     val blobId   = BlobId.of(bucket, prefix)
     val blobInfo = BlobInfo.newBuilder(blobId).build
     logger.info(s"Copying object from local fs $file to gs://$bucket/$prefix")
@@ -43,19 +47,19 @@ case class GCS(client: Storage) extends GCSApi.Service {
   }
 
   override def putObject(bucket: String, prefix: String, options: List[BlobWriteOption]): GCSSink = {
-    val os: Managed[IOException, OutputStream] = Managed
+    val os: ZIO[Scope, IOException, OutputStream] = ZIO
       .fromAutoCloseable {
-        Task {
+        ZIO.attempt {
           val blobId   = BlobId.of(bucket, prefix)
           val blobInfo = BlobInfo.newBuilder(blobId).build
           Channels.newOutputStream(client.writer(blobInfo, options: _*))
         }
       }
       .refineOrDie { case e: IOException => e }
-    ZSink.fromOutputStreamManaged(os)
+    ZSink.fromOutputStreamScoped(os)
   }
 
-  override def getObject(bucket: String, prefix: String, file: Path): Task[Unit] = Task {
+  override def getObject(bucket: String, prefix: String, file: Path): Task[Unit] = ZIO.attempt {
     val blobId = BlobId.of(bucket, prefix)
     val blob   = client.get(blobId)
     logger.info(s"Copying object from gs://$bucket/$prefix to local fs $file")
@@ -63,9 +67,9 @@ case class GCS(client: Storage) extends GCSApi.Service {
   }
 
   override def getObject(bucket: String, prefix: String, chunkSize: Int): GCSStream = {
-    val is: Managed[IOException, InputStream] = Managed
+    val is: ZIO[Scope, IOException, InputStream] = ZIO
       .fromAutoCloseable {
-        Task {
+        ZIO.attempt {
           val blobId = BlobId.of(bucket, prefix)
           val blob   = client.get(blobId)
           Channels.newInputStream {
@@ -76,7 +80,7 @@ case class GCS(client: Storage) extends GCSApi.Service {
         }
       }
       .refineOrDie { case e: IOException => e }
-    ZStream.fromInputStreamManaged(is, chunkSize)
+    ZStream.fromInputStreamScoped(is, chunkSize)
   }
 
   private def getTargetPath(srcPath: String, targetPath: String, currentPath: String): String =
@@ -92,8 +96,8 @@ case class GCS(client: Storage) extends GCSApi.Service {
       targetPrefix: Option[String],
       parallelism: Int
   ): Task[Unit] = listObjects(srcBucket, srcPrefix, srcRecursive, srcOptions)
-    .mapMPar(parallelism) { blob =>
-      Task {
+    .mapZIOPar(parallelism) { blob =>
+      ZIO.attempt {
         targetPrefix.fold {
           logger.info(s"Copying object from gs://$srcBucket/${blob.getName} to gs://$targetBucket/${blob.getName}")
           blob.copyTo(targetBucket)
@@ -114,8 +118,9 @@ case class GCS(client: Storage) extends GCSApi.Service {
       overwrite: Boolean
   ): Task[Unit] = {
     val opts = if (overwrite) List.empty else List(BlobTargetOption.doesNotExist())
-    listLocalFsObjects(srcPath)
-      .mapMPar(parallelism) { path =>
+    GCSLive
+      .listLocalFsObjects(srcPath)
+      .mapZIOPar(parallelism) { path =>
         val targetPath = getTargetPath(srcPath, targetPrefix, path.toString)
         putObject(targetBucket, targetPath, path, opts)
       }
@@ -123,12 +128,12 @@ case class GCS(client: Storage) extends GCSApi.Service {
   }
 }
 
-object GCS {
+object GCSLive {
 
-  def listLocalFsObjects(path: String): Stream[Throwable, Path] = Stream
+  def listLocalFsObjects(path: String): Stream[Throwable, Path] = ZStream
     .fromJavaIterator(Files.walk(Paths.get(path)).iterator())
     .filter(Files.isRegularFile(_))
 
-  def live(path: Option[String] = None): Layer[Throwable, GCSEnv] =
-    Managed.effect(GCSClient(path)).map(client => GCS(client)).toLayer
+  def apply(path: Option[String] = None): Layer[Throwable, GCSEnv] =
+    ZLayer.fromZIO(ZIO.attempt(GCSClient(path)).map(client => GCSLive(client)))
 }

@@ -27,7 +27,7 @@ __Maven__
 
 ***Google Cloud Storage API***
 ```scala
-import gcp4zio.GCSApi
+import gcp4zio.gcs._
 
 // Copy single object from source bucket to target bucket
 GCSApi.copyObjectsGCStoGCS(

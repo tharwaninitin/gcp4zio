@@ -1,11 +1,14 @@
 import zio.test._
 import gcp4zio._
+//import gcp4zio.bq.BQLive
+//import gcp4zio.dp.{DPJobLive, DPLive}
+//import gcp4zio.gcs.GCSLive
 
-object RunTests extends DefaultRunnableSpec with TestHelper {
+object RunTests extends ZIOSpecDefault with TestHelper {
 
-  // val env = DPJob.live(dp_endpoint) ++ DP.live(dp_endpoint) ++ BQ.live() ++ GCS.live()
+  // private val env = DPJobLive(dpEndpoint) ++ DPLive(dpEndpoint) ++ BQLive() ++ GCSLive()
 
-  override def spec: ZSpec[environment.TestEnvironment, Any] = suite("GCP Apis")(
+  override def spec: Spec[TestEnvironment, Any] = suite("GCP Apis")(
     BQSchemaMappingTestSuite.spec
     // BQStepsTestSuite.spec,
     // GCSTestSuite.spec,
