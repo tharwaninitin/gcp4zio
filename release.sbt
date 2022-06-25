@@ -45,9 +45,9 @@ releaseNextVersion := { ver =>
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
   inquireVersions,
-  setReleaseVersion,
+  setReleaseVersion,                              // Update current release version in version.sbt
   releaseStepCommand("versionPolicyCheck"),       // Run task `versionPolicyCheck` after the release version is set
   releaseStepTask(setNextCompatibilityIntention), // Reset compatibility intention to `Compatibility.BinaryAndSourceCompatible`
   releaseStepCommandAndRemaining("+publish"),
-  setNextVersion
+  setNextVersion // Update future release version in version.sbt
 )
