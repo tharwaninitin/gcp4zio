@@ -1,9 +1,10 @@
 package gcp4zio
+package bq
 
 import java.util.UUID
 import com.google.cloud.bigquery.{BigQuery, CsvOptions, ExtractJobConfiguration, FieldValueList, FormatOptions, Job, JobConfiguration, JobId, JobInfo, LoadJobConfiguration, QueryJobConfiguration, Schema, StandardTableDefinition, TableId, TableResult}
 import BQInputType.{CSV, JSON, ORC, PARQUET}
-import zio.{Managed, Task, TaskLayer, ZIO}
+import zio.{Task, TaskLayer, ZIO, ZLayer}
 import scala.jdk.CollectionConverters._
 import scala.sys.process._
 
@@ -15,7 +16,7 @@ import scala.sys.process._
     "org.wartremover.warts.PlatformDefault"
   )
 )
-case class BQ(client: BigQuery) extends BQApi.Service[Task] {
+case class BQLive(client: BigQuery) extends BQApi[Task] {
 
   private def getFormatOptions(inputType: BQInputType): FormatOptions = inputType match {
     case PARQUET => FormatOptions.parquet
@@ -29,7 +30,7 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
     case _ => FormatOptions.parquet
   }
 
-  def executeQuery(query: String): Task[Unit] = Task {
+  def executeQuery(query: String): Task[Unit] = ZIO.attempt {
     val queryConfig: QueryJobConfiguration = QueryJobConfiguration
       .newBuilder(query)
       .setUseLegacySql(false)
@@ -57,7 +58,7 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
     }
   }
 
-  def getData(query: String): Task[Iterable[FieldValueList]] = Task {
+  def getData(query: String): Task[Iterable[FieldValueList]] = ZIO.attempt {
     val queryConfig: QueryJobConfiguration = QueryJobConfiguration
       .newBuilder(query)
       .setUseLegacySql(false)
@@ -78,7 +79,7 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
       sourceFormat: BQInputType,
       destinationDataset: String,
       destinationTable: String
-  ): Task[Unit] = Task {
+  ): Task[Unit] = ZIO.attempt {
     sourceLocations match {
       case Left(path) =>
         logger.info("BQ file path: " + path)
@@ -121,7 +122,7 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
   ): Task[Map[String, Long]] = {
     logger.info(s"No of BQ partitions: ${sourcePathsPartitions.length}")
     ZIO
-      .foreachParN(parallelism)(sourcePathsPartitions) { case (src_path, partition) =>
+      .foreachPar(sourcePathsPartitions) { case (src_path, partition) =>
         loadTable(
           src_path,
           sourceFormat,
@@ -132,6 +133,7 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
           createDisposition
         )
       }
+      .withParallelism(parallelism)
       .map(x => x.flatten.toMap)
   }
 
@@ -144,7 +146,7 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
       writeDisposition: JobInfo.WriteDisposition,
       createDisposition: JobInfo.CreateDisposition,
       schema: Option[Schema]
-  ): Task[Map[String, Long]] = Task {
+  ): Task[Map[String, Long]] = ZIO.attempt {
     val tableId = destinationProject match {
       case Some(project) => TableId.of(project, destinationDataset, destinationTable)
       case None          => TableId.of(destinationDataset, destinationTable)
@@ -211,7 +213,7 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
       destinationFileName: Option[String],
       destinationFormat: BQInputType,
       destinationCompressionType: String = "gzip"
-  ): Task[Unit] = Task {
+  ): Task[Unit] = ZIO.attempt {
 
     val tableId = sourceProject match {
       case Some(project) => TableId.of(project, sourceDataset, sourceTable)
@@ -256,8 +258,8 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
       logger.info(s"Source table: $sourceDataset.$sourceTable")
       logger.info(s"Destination path: $destinationPath")
       logger.info(s"Job State: ${completedJob.getStatus.getState}")
-    } else if (completedJob.getStatus().getError() != null) {
-      logger.error(s"BigQuery was unable to extract due to an error:" + job.getStatus().getError())
+    } else if (completedJob.getStatus.getError != null) {
+      logger.error(s"BigQuery was unable to extract due to an error:" + job.getStatus.getError)
     } else {
       throw BQLoadException(
         s"""Could not load data from bq table $sourceDataset.$sourceTable to  location  $destinationFileName due to error ${completedJob.getStatus.getError.getMessage}""".stripMargin
@@ -266,7 +268,7 @@ case class BQ(client: BigQuery) extends BQApi.Service[Task] {
   }
 }
 
-object BQ {
-  def live(credentials: Option[String] = None): TaskLayer[BQEnv] =
-    Managed.effect(BQClient(credentials)).map(bq => BQ(bq)).toLayer
+object BQLive {
+  def apply(credentials: Option[String] = None): TaskLayer[BQEnv] =
+    ZLayer.fromZIO(ZIO.attempt(BQClient(credentials)).map(bq => BQLive(bq)))
 }

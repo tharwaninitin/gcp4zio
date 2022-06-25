@@ -1,8 +1,8 @@
 package gcp4zio
 
 import com.google.cloud.bigquery.Schema
-import gcp4zio.BQInputType.{CSV, PARQUET}
-import utils.Encoder
+import gcp4zio.bq.{BQApi, BQEnv, Encoder}
+import gcp4zio.bq.BQInputType.{CSV, PARQUET}
 import zio.ZIO
 import zio.test.Assertion.equalTo
 import zio.test._
@@ -17,17 +17,17 @@ object BQStepsTestSuite extends TestHelper {
   private val outputTable      = "ratings"
   private val outputDataset    = "dev"
 
-  val spec: ZSpec[environment.TestEnvironment with BQEnv, Any] = suite("BQ Steps")(
-    testM("Execute BQLoad PARQUET step") {
+  val spec: Spec[TestEnvironment with BQEnv, Any] = suite("BQ Steps")(
+    test("Execute BQLoad PARQUET step") {
       val step = BQApi.loadTable(inputFileParquet, PARQUET, gcpProjectId, outputDataset, outputTable)
-      assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
+      assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
-    testM("Execute BQLoad CSV step") {
+    test("Execute BQLoad CSV step") {
       val schema: Option[Schema] = Encoder[RatingCSV]
       val step                   = BQApi.loadTable(inputFileCsv, CSV(), gcpProjectId, outputDataset, outputTable, schema = schema)
-      assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
+      assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
-    testM("Execute BQExport CSV step") {
+    test("Execute BQExport CSV step") {
       val step = BQApi.exportTable(
         outputDataset,
         outputTable,
@@ -36,9 +36,9 @@ object BQStepsTestSuite extends TestHelper {
         Some("sample.csv"),
         CSV()
       )
-      assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
+      assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
-    testM("Execute BQExport PARQUET step") {
+    test("Execute BQExport PARQUET step") {
       val step = BQApi.exportTable(
         outputDataset,
         outputTable,
@@ -48,7 +48,7 @@ object BQStepsTestSuite extends TestHelper {
         PARQUET,
         "snappy"
       )
-      assertM(step.foldM(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
+      assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     }
   ) @@ TestAspect.sequential
 }

@@ -1,13 +1,14 @@
 package gcp4zio
+package dp
 
 import com.google.cloud.dataproc.v1._
 import com.google.protobuf.Duration
-import zio.{Managed, TaskLayer, UIO, ZIO}
+import zio.{Task, TaskLayer, ZIO, ZLayer}
 import scala.jdk.CollectionConverters._
 
-case class DP(client: ClusterControllerClient) extends DPApi.Service {
+case class DPLive(client: ClusterControllerClient) extends DPApi[Task] {
 
-  def createDataproc(clusterName: String, project: String, region: String, props: ClusterProps): BlockingTask[Cluster] = ZIO
+  def createDataproc(clusterName: String, project: String, region: String, props: ClusterProps): Task[Cluster] = ZIO
     .fromFutureJava {
       val endPointConfig = EndpointConfig.newBuilder().setEnableHttpPortAccess(true)
       val softwareConfig = SoftwareConfig.newBuilder().setImageVersion(props.imageVersion)
@@ -79,22 +80,22 @@ case class DP(client: ClusterControllerClient) extends DPApi.Service {
       createClusterAsyncRequest
     }
     .tapBoth(
-      e => UIO(logger.error(s"Cluster creation failed with error ${e.getMessage}")),
-      res => UIO(logger.info(s"Cluster ${res.getClusterName} created successfully"))
+      e => ZIO.succeed(logger.error(s"Cluster creation failed with error ${e.getMessage}")),
+      res => ZIO.succeed(logger.info(s"Cluster ${res.getClusterName} created successfully"))
     )
 
-  def deleteDataproc(clusterName: String, project: String, region: String): BlockingTask[Unit] = ZIO
+  def deleteDataproc(clusterName: String, project: String, region: String): Task[Unit] = ZIO
     .fromFutureJava {
       logger.info(s"Submitting cluster deletion request for $clusterName")
       client.deleteClusterAsync(project, region, clusterName)
     }
     .tapBoth(
-      e => UIO(logger.error(s"Cluster deletion failed with error ${e.getMessage}")),
-      _ => UIO(logger.info(s"Cluster $clusterName deleted successfully"))
+      e => ZIO.succeed(logger.error(s"Cluster deletion failed with error ${e.getMessage}")),
+      _ => ZIO.succeed(logger.info(s"Cluster $clusterName deleted successfully"))
     )
     .unit
 }
 
-object DP {
-  def live(endpoint: String): TaskLayer[DPEnv] = Managed.fromAutoCloseable(DPClient(endpoint)).map(dp => DP(dp)).toLayer
+object DPLive {
+  def apply(endpoint: String): TaskLayer[DPEnv] = ZLayer.scoped(ZIO.fromAutoCloseable(DPClient(endpoint)).map(dp => DPLive(dp)))
 }
