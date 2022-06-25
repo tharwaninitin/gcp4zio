@@ -1,8 +1,6 @@
 import sbtrelease._
 import sbtrelease.ReleaseStateTransformations._
 
-releaseVersion := setReleaseVersionFunction(versionPolicyIntention.value)
-
 def setReleaseVersionFunction(compatibilityIntention: Compatibility): String => String = {
   val maybeBump = compatibilityIntention match {
     case Compatibility.None                      => Some(Version.Bump.Minor) // For "early-semver" - major version is 0
@@ -38,11 +36,9 @@ ThisBuild / setNextCompatibilityIntention := {
   }
 }
 
-/* Note that we are skipping some steps as we are using the maven plugin.
- * Should remove that later when we get publishArtifacts working
- */
 releaseIgnoreUntrackedFiles := true
 releaseCrossBuild           := false
+releaseVersion              := setReleaseVersionFunction(versionPolicyIntention.value)
 releaseNextVersion := { ver =>
   Version(ver).map(_.bump(releaseVersionBump.value).string).getOrElse(versionFormatError(ver))
 }
