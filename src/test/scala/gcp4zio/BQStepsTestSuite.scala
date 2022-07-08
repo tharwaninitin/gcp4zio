@@ -19,19 +19,19 @@ object BQStepsTestSuite extends TestHelper {
 
   val spec: Spec[TestEnvironment with BQEnv, Any] = suite("BQ Steps")(
     test("Execute BQLoad PARQUET step") {
-      val step = BQApi.loadTable(inputFileParquet, PARQUET, gcpProjectId, outputDataset, outputTable)
+      val step = BQApi.loadTable(inputFileParquet, PARQUET, Some(gcpProject), outputDataset, outputTable)
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
     test("Execute BQLoad CSV step") {
       val schema: Option[Schema] = Encoder[RatingCSV]
-      val step                   = BQApi.loadTable(inputFileCsv, CSV(), gcpProjectId, outputDataset, outputTable, schema = schema)
+      val step = BQApi.loadTable(inputFileCsv, CSV(), Some(gcpProject), outputDataset, outputTable, schema = schema)
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
     test("Execute BQExport CSV step") {
       val step = BQApi.exportTable(
         outputDataset,
         outputTable,
-        gcpProjectId,
+        Some(gcpProject),
         bqExportDestPath,
         Some("sample.csv"),
         CSV()
@@ -42,7 +42,7 @@ object BQStepsTestSuite extends TestHelper {
       val step = BQApi.exportTable(
         outputDataset,
         outputTable,
-        gcpProjectId,
+        Some(gcpProject),
         bqExportDestPath,
         Some("sample.parquet"),
         PARQUET,

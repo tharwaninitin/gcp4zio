@@ -84,14 +84,14 @@ case class DPLive(client: ClusterControllerClient) extends DPApi[Task] {
       res => ZIO.succeed(logger.info(s"Cluster ${res.getClusterName} created successfully"))
     )
 
-  def deleteDataproc(clusterName: String, project: String, region: String): Task[Unit] = ZIO
+  def deleteDataproc(cluster: String, project: String, region: String): Task[Unit] = ZIO
     .fromFutureJava {
-      logger.info(s"Submitting cluster deletion request for $clusterName")
-      client.deleteClusterAsync(project, region, clusterName)
+      logger.info(s"Submitting cluster deletion request for $cluster")
+      client.deleteClusterAsync(project, region, cluster)
     }
     .tapBoth(
       e => ZIO.succeed(logger.error(s"Cluster deletion failed with error ${e.getMessage}")),
-      _ => ZIO.succeed(logger.info(s"Cluster $clusterName deleted successfully"))
+      _ => ZIO.succeed(logger.info(s"Cluster $cluster deleted successfully"))
     )
     .unit
 }

@@ -14,7 +14,7 @@ object DPCreateTestSuite extends TestHelper {
         networkTags = dpNetworkTags,
         serviceAccount = dpServiceAccount
       )
-      val step = DPApi.createDataproc(dpCluster, gcpProjectId.getOrElse("NA"), gcpRegion.getOrElse("NA"), dpProps)
+      val step = DPApi.createDataproc(dpCluster, gcpProject, gcpRegion, dpProps)
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     }
 }

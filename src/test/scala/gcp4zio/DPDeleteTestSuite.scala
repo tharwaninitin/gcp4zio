@@ -8,7 +8,7 @@ import zio.test._
 object DPDeleteTestSuite extends TestHelper {
   val spec: Spec[TestEnvironment with DPEnv, Any] =
     test("Execute DPDeleteStep") {
-      val step = DPApi.deleteDataproc(dpCluster, gcpProjectId.getOrElse("NA"), gcpRegion.getOrElse("NA"))
+      val step = DPApi.deleteDataproc(dpCluster, gcpProject, gcpRegion)
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     }
 }

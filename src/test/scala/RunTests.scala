@@ -1,7 +1,8 @@
 import zio.test._
 import gcp4zio._
+//import gcp4zio.dp.DPLive
 //import gcp4zio.bq.BQLive
-//import gcp4zio.dp.{DPJobLive, DPLive}
+//import gcp4zio.dp.DPJobLive
 //import gcp4zio.gcs.GCSLive
 
 object RunTests extends ZIOSpecDefault with TestHelper {

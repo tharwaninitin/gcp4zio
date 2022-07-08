@@ -9,15 +9,13 @@ import scala.jdk.CollectionConverters._
 @SuppressWarnings(Array("org.wartremover.warts.While", "org.wartremover.warts.Var", "org.wartremover.warts.Throw"))
 case class DPJobLive(client: JobControllerClient) extends DPJobApi[Task] {
 
-  private def submitAndWait(projectId: String, region: String, job: Job): Job = {
-    val response = client.submitJob(projectId, region, job)
-    val jobId    = response.getReference.getJobId
-    logger.info(s"Submitted job $jobId")
+  def trackJob(project: String, region: String, job: Job): Task[Unit] = ZIO.attempt {
+    val jobId    = job.getReference.getJobId
     var continue = true
-    var jobInfo  = client.getJob(projectId, region, jobId)
+    var jobInfo  = client.getJob(project, region, jobId)
     var jobState = jobInfo.getStatus.getState.toString
     while (continue) {
-      jobInfo = client.getJob(projectId, region, jobId)
+      jobInfo = client.getJob(project, region, jobId)
       jobState = jobInfo.getStatus.getState.toString
       logger.info(s"Job $jobId Status $jobState")
       jobInfo.getStatus.getState.toString match {
@@ -32,29 +30,28 @@ case class DPJobLive(client: JobControllerClient) extends DPJobApi[Task] {
           TimeUnit.SECONDS.sleep(10)
       }
     }
-    response
   }
 
-  def executeSparkJob(
+  def submitSparkJob(
       args: List[String],
       mainClass: String,
       libs: List[String],
       conf: Map[String, String],
-      clusterName: String,
+      cluster: String,
       project: String,
       region: String
   ): Task[Job] = ZIO.attempt {
     logger.info(s"""Trying to submit spark job on Dataproc with Configurations:
                    |region => $region
                    |project => $project
-                   |clusterName => $clusterName
+                   |cluster => $cluster
                    |mainClass => $mainClass
                    |args => $args
                    |conf => $conf""".stripMargin)
     logger.info("libs")
     libs.foreach(logger.info)
 
-    val jobPlacement = JobPlacement.newBuilder().setClusterName(clusterName).build()
+    val jobPlacement = JobPlacement.newBuilder().setClusterName(cluster).build()
     val sparkJob = SparkJob
       .newBuilder()
       .addAllJarFileUris(libs.asJava)
@@ -63,20 +60,20 @@ case class DPJobLive(client: JobControllerClient) extends DPJobApi[Task] {
       .addAllArgs(args.asJava)
       .build()
     val job: Job = Job.newBuilder().setPlacement(jobPlacement).setSparkJob(sparkJob).build()
-    submitAndWait(project, region, job)
+    client.submitJob(project, region, job)
   }
 
-  def executeHiveJob(query: String, clusterName: String, project: String, region: String): Task[Job] = ZIO.attempt {
+  def submitHiveJob(query: String, cluster: String, project: String, region: String): Task[Job] = ZIO.attempt {
     logger.info(s"""Trying to submit hive job on Dataproc with Configurations:
                    |region => $region
                    |project => $project
-                   |clusterName => $clusterName
+                   |cluster => $cluster
                    |query => $query""".stripMargin)
-    val jobPlacement = JobPlacement.newBuilder().setClusterName(clusterName).build()
+    val jobPlacement = JobPlacement.newBuilder().setClusterName(cluster).build()
     val queryList    = QueryList.newBuilder().addQueries(query)
     val hiveJob      = HiveJob.newBuilder().setQueryList(queryList).build()
-    val job          = Job.newBuilder().setPlacement(jobPlacement).setHiveJob(hiveJob).build()
-    submitAndWait(project, region, job)
+    val job: Job     = Job.newBuilder().setPlacement(jobPlacement).setHiveJob(hiveJob).build()
+    client.submitJob(project, region, job)
   }
 }
 
