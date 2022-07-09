@@ -14,7 +14,7 @@ jobs:
         distribution: 'adopt'
         java-version: ${{ matrix.java-version }}
     - name: Run BQ Tests
-        run: sbt ";project bq; +test"
+      run: sbt ";project bq; +test"
   dp:
     runs-on: ubuntu-latest
     strategy:
@@ -28,7 +28,7 @@ jobs:
           distribution: 'adopt'
           java-version: ${{ matrix.java-version }}
       - name: Run DP Tests
-          run: sbt ";project dp; +Test/compile"
+        run: sbt ";project dp; +Test/compile"
   gcs:
     runs-on: ubuntu-latest
     strategy:
@@ -42,4 +42,4 @@ jobs:
           distribution: 'adopt'
           java-version: ${{ matrix.java-version }}
       - name: Run GCS Tests
-          run: sbt ";project gcs; +Test/compile"
+        run: sbt ";project gcs; +Test/compile"
