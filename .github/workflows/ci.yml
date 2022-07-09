@@ -1,7 +1,7 @@
 name: CI
 on: [push]
 jobs:
-  test:
+  bq:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -13,5 +13,33 @@ jobs:
       with:
         distribution: 'adopt'
         java-version: ${{ matrix.java-version }}
-    - name: Run tests
-      run: sbt "+test"
+    - name: Run BQ Tests
+        run: sbt ";project bq; +test"
+  dp:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [ 8, 11, 16 ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: ${{ matrix.java-version }}
+      - name: Run DP Tests
+          run: sbt ";project dp; +Test/compile"
+  gcs:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [ 8, 11, 16 ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: ${{ matrix.java-version }}
+      - name: Run GCS Tests
+          run: sbt ";project gcs; +Test/compile"
