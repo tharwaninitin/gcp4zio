@@ -18,7 +18,7 @@ object DPStepsTestSuite extends TestHelper {
     GCSApi
       .listObjects(bucket, Some(path), recursive = false, List.empty)
       .flatMap { blob =>
-        logger.info(s"Reading logs from gs://$bucket/${blob.getName}")
+        logger.info(s"Reading logs from gs://$bucket/${blob.getName} with size ${blob.getSize} bytes")
         GCSApi
           .getObject(bucket, blob.getName, 4096)
           .via(ZPipeline.utf8Decode >>> ZPipeline.splitLines)
@@ -32,7 +32,7 @@ object DPStepsTestSuite extends TestHelper {
       test("Run HiveJob") {
         val task = for {
           job <- DPJobApi.submitHiveJob("SELECT 1 AS ONE", dpCluster, gcpProject, gcpRegion)
-          _   <- DPJobApi.trackJob(gcpProject, gcpRegion, job)
+          _   <- DPJobApi.trackJobProgress(gcpProject, gcpRegion, job)
           _   <- printGcsLogs(job)
         } yield ()
         assertZIO(task.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
@@ -40,9 +40,11 @@ object DPStepsTestSuite extends TestHelper {
       test("Run HiveJob (Failure)") {
         val task = for {
           job <- DPJobApi.submitHiveJob("SELE 1 AS ONE", dpCluster, gcpProject, gcpRegion)
-          _   <- DPJobApi.trackJob(gcpProject, gcpRegion, job).tapError(_ => printGcsLogs(job))
+          _ <- DPJobApi
+            .trackJobProgress(gcpProject, gcpRegion, job)
+            .tapError(_ => printGcsLogs(job))
         } yield ()
-        assertZIO(task.foldZIO(_ => ZIO.succeed("ok"), _ => ZIO.fail("ok")))(equalTo("ok"))
+        assertZIO(task.foldZIO(_ => ZIO.succeed("ok"), _ => ZIO.fail("Defect!!!!")))(equalTo("ok"))
       },
       test("Run SparkJob") {
         val libs      = List("file:///usr/lib/spark/examples/jars/spark-examples.jar")
@@ -50,7 +52,7 @@ object DPStepsTestSuite extends TestHelper {
         val mainClass = "org.apache.spark.examples.SparkPi"
         val task = for {
           job <- DPJobApi.submitSparkJob(List("1000"), mainClass, libs, conf, dpCluster, gcpProject, gcpRegion)
-          _   <- DPJobApi.trackJob(gcpProject, gcpRegion, job)
+          _   <- DPJobApi.trackJobProgress(gcpProject, gcpRegion, job)
           _   <- printGcsLogs(job)
         } yield ()
         assertZIO(task.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
