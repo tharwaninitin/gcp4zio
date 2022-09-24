@@ -6,7 +6,7 @@ import zio.Schedule.Decision
 import zio.{Duration, Schedule, Task, TaskLayer, ZIO, ZLayer}
 import scala.jdk.CollectionConverters._
 
-@SuppressWarnings(Array("org.wartremover.warts.While", "org.wartremover.warts.Var", "org.wartremover.warts.Throw"))
+@SuppressWarnings(Array("org.wartremover.warts.ToString"))
 case class DPJobLive(client: JobControllerClient) extends DPJobApi[Task] {
 
   private val recurWhile: Schedule[Any, Job, Job] = Schedule.recurWhile[Job] {

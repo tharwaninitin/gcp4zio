@@ -13,7 +13,8 @@ import scala.sys.process._
     "org.wartremover.warts.Var",
     "org.wartremover.warts.ToString",
     "org.wartremover.warts.Throw",
-    "org.wartremover.warts.PlatformDefault"
+    "org.wartremover.warts.PlatformDefault",
+    "org.wartremover.warts.AutoUnboxing"
   )
 )
 case class BQLive(client: BigQuery) extends BQApi[Task] {
@@ -251,7 +252,8 @@ case class BQLive(client: BigQuery) extends BQApi[Task] {
       case _ => throw BQLoadException("Unsupported Destination Format")
     }
 
-    val job          = client.create(JobInfo.of(extractJobConfiguration));
+    val job = client.create(JobInfo.of(extractJobConfiguration))
+
     val completedJob = job.waitFor()
 
     if (completedJob.getStatus.getError == null) {

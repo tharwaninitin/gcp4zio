@@ -3,7 +3,7 @@ import gcp4zio.dp.{DPJobApi, DPJobLive}
 import gcp4zio.gcs.{GCSApi, GCSEnv, GCSLive}
 import gcp4zio.utils.ApplicationLogger
 import zio.stream.ZPipeline
-import zio.{ZIO, ZIOAppDefault}
+import zio.{Task, ZIO, ZIOAppDefault}
 import java.net.URI
 
 // Before running this application make sure dataproc cluster is running and below mentioned environment variables are set
@@ -35,15 +35,14 @@ object Main extends ZIOAppDefault with ApplicationLogger {
       .runDrain
   }
 
-  private val libs      = List("file:///usr/lib/spark/examples/jars/spark-examples.jar")
-  private val conf      = Map("spark.executor.memory" -> "1g", "spark.driver.memory" -> "1g")
+  private val libs = List("file:///usr/lib/spark/examples/jars/spark-examples.jar")
+  private val conf = Map("spark.executor.memory" -> "1g", "spark.driver.memory" -> "1g")
+
   private val mainClass = "org.apache.spark.examples.SparkPi"
 
-  private val program1 = for {
-    job <- DPJobApi.submitSparkJob(List("1000"), mainClass, libs, conf, dpCluster, gcpProject, gcpRegion)
-    _   <- DPJobApi.trackJobProgress(gcpProject, gcpRegion, job).tapError(_ => printGcsLogs(job))
-    _   <- printGcsLogs(job)
-  } yield ()
+  private val program1 = DPJobApi
+    .executeSparkJob(List("1000"), mainClass, libs, conf, dpCluster, gcpProject, gcpRegion)
+    .flatMap(printGcsLogs)
 
   private val program2 = for {
     job <- DPJobApi.submitHiveJob("SELE 1 AS ONE", dpCluster, gcpProject, gcpRegion)
@@ -51,5 +50,5 @@ object Main extends ZIOAppDefault with ApplicationLogger {
     _   <- printGcsLogs(job)
   } yield ()
 
-  val run = (program1 *> program2).provide(DPJobLive(dpEndpoint) ++ GCSLive())
+  val run: Task[Unit] = (program1 *> program2).provide(DPJobLive(dpEndpoint) ++ GCSLive())
 }

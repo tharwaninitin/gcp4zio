@@ -4,9 +4,9 @@ import Versions._
 lazy val examples = (project in file("examples"))
   .settings(
     name               := "examples",
-    scalaVersion       := scala212,
+    scalaVersion       := Scala212,
     publish / skip     := true,
-    crossScalaVersions := allScalaVersions,
+    crossScalaVersions := AllScalaVersions,
     libraryDependencies ++= List(
       "com.github.tharwaninitin" %% "gcp4zio-dp"      % version.value,
       "com.github.tharwaninitin" %% "gcp4zio-gcs"     % version.value,
