@@ -12,6 +12,7 @@ import java.nio.charset.CharacterCodingException
 import java.nio.file.Paths
 import java.util.UUID
 
+@SuppressWarnings(Array("org.wartremover.warts.AutoUnboxing"))
 object GCSTestSuite extends ApplicationLogger {
   val prefix = "temp/test/ratings.csv"
   val spec: Spec[TestEnvironment with GCSEnv, Any] =

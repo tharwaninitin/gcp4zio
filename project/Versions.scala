@@ -4,7 +4,7 @@ object Versions {
   val Scala3                    = "3.2.0"
   val AllScalaVersions          = List(Scala212, Scala213, Scala3)
   val ZioVersion                = "2.0.2"
-  val Sl4jVersion               = "2.0.2"
+  val Sl4jVersion               = "2.0.3"
   val LogbackVersion            = "1.4.1"
   val ScalaJavaCollectionCompat = "2.8.1"
   val GcpBqVersion              = "2.16.1"
