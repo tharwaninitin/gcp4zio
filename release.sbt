@@ -3,7 +3,7 @@ import sbtrelease.ReleaseStateTransformations._
 
 def setReleaseVersionFunction(compatibilityIntention: Compatibility): String => String = {
   val maybeBump = compatibilityIntention match {
-    case Compatibility.None                      => Some(Version.Bump.Minor) // For "early-semver" - major version is 0
+    case Compatibility.None                      => Some(Version.Bump.Major)
     case Compatibility.BinaryCompatible          => Some(Version.Bump.Minor)
     case Compatibility.BinaryAndSourceCompatible => None
     // No need to bump the patch version, because it has already been bumped when sbt-release set the next release version
@@ -49,5 +49,6 @@ releaseProcess := Seq[ReleaseStep](
   releaseStepCommand("versionPolicyCheck"),       // Run task `versionPolicyCheck` after the release version is set
   releaseStepTask(setNextCompatibilityIntention), // Reset compatibility intention to `Compatibility.BinaryAndSourceCompatible`
   releaseStepCommandAndRemaining("+publish"),
-  setNextVersion // Update future release version in version.sbt
+  setNextVersion, // Update future release version in version.sbt
+  tagRelease
 )
