@@ -14,13 +14,16 @@ Add the latest release as a dependency to your project
 
 __SBT__
 ```
-libraryDependencies += "com.github.tharwaninitin" %% "gcp4zio" % "x.x.x"
+libraryDependencies ++= List(
+      "com.github.tharwaninitin" %% "gcp4zio-gcs" % x.x.x,
+      "com.github.tharwaninitin" %% "gcp4zio-dp"  % x.x.x
+   )
 ```
 __Maven__
 ```
 <dependency>
     <groupId>com.github.tharwaninitin</groupId>
-    <artifactId>gcp4zio_2.12</artifactId>
+    <artifactId>gcp4zio-gcs_2.12</artifactId>
     <version>x.x.x</version>
 </dependency>
 ```
