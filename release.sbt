@@ -49,6 +49,6 @@ releaseProcess := Seq[ReleaseStep](
   releaseStepCommand("versionPolicyCheck"),       // Run task `versionPolicyCheck` after the release version is set
   releaseStepTask(setNextCompatibilityIntention), // Reset compatibility intention to `Compatibility.BinaryAndSourceCompatible`
   releaseStepCommandAndRemaining("+publish"),
-  setNextVersion, // Update future release version in version.sbt
-  tagRelease
+  tagRelease,
+  setNextVersion // Update future release version in version.sbt
 )
