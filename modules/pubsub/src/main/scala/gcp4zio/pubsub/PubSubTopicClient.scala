@@ -12,11 +12,12 @@ object PubSubTopicClient {
 
   private def getTopicClient(path: String): TopicAdminClient = {
     val credentials: GoogleCredentials = ServiceAccountCredentials.fromStream(new FileInputStream(path))
-    val topicAdminSettings = TopicAdminSettings.newBuilder.setCredentialsProvider(FixedCredentialsProvider.create(credentials)).build
+    val topicAdminSettings =
+      TopicAdminSettings.newBuilder.setCredentialsProvider(FixedCredentialsProvider.create(credentials)).build
     TopicAdminClient.create(topicAdminSettings)
   }
 
-  def apply(path: Option[String]): Task[TopicAdminClient]= ZIO.attempt{
+  def apply(path: Option[String]): Task[TopicAdminClient] = ZIO.attempt {
     val envPath: String = sys.env.getOrElse("GOOGLE_APPLICATION_CREDENTIALS", "NOT_SET_IN_ENV")
 
     path match {

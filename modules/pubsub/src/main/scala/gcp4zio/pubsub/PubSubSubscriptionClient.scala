@@ -12,12 +12,14 @@ object PubSubSubscriptionClient {
 
   private def getSubscriptionClient(path: String): SubscriptionAdminClient = {
     val credentials: GoogleCredentials = ServiceAccountCredentials.fromStream(new FileInputStream(path))
-    val subscriptionAdminSettings = SubscriptionAdminSettings.newBuilder()
-      .setCredentialsProvider(FixedCredentialsProvider.create(credentials)).build
+    val subscriptionAdminSettings = SubscriptionAdminSettings
+      .newBuilder()
+      .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
+      .build
     SubscriptionAdminClient.create(subscriptionAdminSettings)
   }
 
-  def apply(path: Option[String]): Task[SubscriptionAdminClient] = ZIO.attempt{
+  def apply(path: Option[String]): Task[SubscriptionAdminClient] = ZIO.attempt {
     val envPath: String = sys.env.getOrElse("GOOGLE_APPLICATION_CREDENTIALS", "NOT_SET_IN_ENV")
 
     path match {

@@ -8,12 +8,12 @@ import zio._
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
 case class PubSubTopicLive(client: TopicAdminClient) extends PubSubTopicApi[Task] {
 
-  override def createTopic(projectId: String, topicId: String): Task[Topic] = ZIO.attempt{
+  override def createTopic(projectId: String, topicId: String): Task[Topic] = ZIO.attempt {
     val topicName = TopicName.of(projectId, topicId)
     client.createTopic(topicName)
   }
 
-  override def deleteTopic(project: String, topic: String): Task[Unit] = ZIO.attempt{
+  override def deleteTopic(project: String, topic: String): Task[Unit] = ZIO.attempt {
     val topicName = TopicName.of(project, topic)
     client.deleteTopic(topicName)
   }

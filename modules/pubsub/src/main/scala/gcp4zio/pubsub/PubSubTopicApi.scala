@@ -9,7 +9,7 @@ trait PubSubTopicApi[F[_]] {
   def deleteTopic(project: String, topic: String): F[Unit]
 }
 
-object PubSubTopicApi  {
+object PubSubTopicApi {
   def createTopic(project: String, topic: String): ZIO[PubSubTopicEnv, Throwable, Topic] =
     ZIO.environmentWithZIO(_.get.createTopic(project, topic))
   def deleteTopic(project: String, topic: String): ZIO[PubSubTopicEnv, Throwable, Unit] =

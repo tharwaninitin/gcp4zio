@@ -8,7 +8,6 @@ import zio.ZIO
 import zio.test.Assertion.{containsString, equalTo, isNull}
 import zio.test._
 
-
 @SuppressWarnings(Array("org.wartremover.warts.AutoUnboxing"))
 object GCSNotificationConfigurationTestSuite extends ApplicationLogger {
   val spec: Spec[GCSEnv, Any] =
@@ -18,12 +17,13 @@ object GCSNotificationConfigurationTestSuite extends ApplicationLogger {
         assertZIO(notification.foldZIO(ex => ZIO.fail(ex.toString), op => ZIO.succeed(op.getTopic)))(containsString(validTopic))
       },
       test("Execute createNotificationConfiguration with existing topic for Create Object Event") {
-        val notification = GCSApi.createNotificationConfiguration(gcsBucket, validTopic, eventType = Some(NotificationInfo.EventType.OBJECT_FINALIZE))
+        val notification = GCSApi
+          .createNotificationConfiguration(gcsBucket, validTopic, eventType = Some(NotificationInfo.EventType.OBJECT_FINALIZE))
         assertZIO(notification.foldZIO(ex => ZIO.fail(ex.toString), op => ZIO.succeed(op.getTopic)))(containsString(validTopic))
       },
       test("Execute createNotificationConfiguration with not existing topic") {
         val notification = GCSApi.createNotificationConfiguration(gcsBucket, notValidTopic)
-        val error = "not found"
+        val error        = "not found"
         assertZIO(notification.foldZIO(ex => ZIO.succeed(ex.getMessage), _ => ZIO.fail("ok")))(containsString(error))
       },
       test("Execute getNotificationConfiguration with existing notification") {

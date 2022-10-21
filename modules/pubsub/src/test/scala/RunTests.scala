@@ -4,10 +4,10 @@ import zio.test._
 
 object RunTests extends ZIOSpecDefault {
 
-  //private val env = PubSubTopicLive() ++ PubSubSubscriptionLive()
+  // private val env = PubSubTopicLive() ++ PubSubSubscriptionLive()
 
   override def spec: Spec[TestEnvironment, Any] = suite("PubSubTopicAndSubscription APIs")(
-    //PubSubTopicTestSuite.spec,
-    //PubSubSubscriptionTestSuite.spec
-  ) @@ TestAspect.sequential //.provideShared(env.orDie)
+    // PubSubTopicTestSuite.spec,
+    // PubSubSubscriptionTestSuite.spec
+  ) @@ TestAspect.sequential // .provideShared(env.orDie)
 }
