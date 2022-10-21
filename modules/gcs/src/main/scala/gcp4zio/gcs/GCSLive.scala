@@ -2,22 +2,23 @@ package gcp4zio
 package gcs
 
 import com.google.cloud.storage.Storage.{BlobListOption, BlobTargetOption, BlobWriteOption}
-import com.google.cloud.storage.{Blob, BlobId, BlobInfo, Storage}
+import com.google.cloud.storage.{Blob, BlobId, BlobInfo, Notification, NotificationInfo, Storage}
 import zio._
 import zio.stream._
 import java.io.{IOException, InputStream, OutputStream}
 import java.nio.channels.Channels
 import java.nio.file.{Files, Path, Paths}
+import scala.jdk.CollectionConverters.{iterableAsScalaIterableConverter, mapAsJavaMapConverter}
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
 case class GCSLive(client: Storage) extends GCSApi {
 
   override def listObjects(
-      bucket: String,
-      prefix: Option[String],
-      recursive: Boolean,
-      options: List[BlobListOption]
-  ): Stream[Throwable, Blob] = {
+                            bucket: String,
+                            prefix: Option[String],
+                            recursive: Boolean,
+                            options: List[BlobListOption]
+                          ): Stream[Throwable, Blob] = {
     val inputOptions    = prefix.map(BlobListOption.prefix).toList ::: options
     val blobListOptions = if (recursive) inputOptions else BlobListOption.currentDirectory() :: inputOptions
     ZStream.fromJavaIterator(client.list(bucket, blobListOptions: _*).iterateAll().iterator())
@@ -88,14 +89,14 @@ case class GCSLive(client: Storage) extends GCSApi {
     else (targetPath + "/" + currentPath.replace(srcPath, "")).replaceAll("//+", "/")
 
   override def copyObjectsGCStoGCS(
-      srcBucket: String,
-      srcPrefix: Option[String],
-      srcRecursive: Boolean,
-      srcOptions: List[BlobListOption],
-      targetBucket: String,
-      targetPrefix: Option[String],
-      parallelism: Int
-  ): Task[Unit] = listObjects(srcBucket, srcPrefix, srcRecursive, srcOptions)
+                                    srcBucket: String,
+                                    srcPrefix: Option[String],
+                                    srcRecursive: Boolean,
+                                    srcOptions: List[BlobListOption],
+                                    targetBucket: String,
+                                    targetPrefix: Option[String],
+                                    parallelism: Int
+                                  ): Task[Unit] = listObjects(srcBucket, srcPrefix, srcRecursive, srcOptions)
     .mapZIOPar(parallelism) { blob =>
       ZIO.attempt {
         targetPrefix.fold {
@@ -111,12 +112,12 @@ case class GCSLive(client: Storage) extends GCSApi {
     .runDrain
 
   override def copyObjectsLOCALtoGCS(
-      srcPath: String,
-      targetBucket: String,
-      targetPrefix: String,
-      parallelism: Int,
-      overwrite: Boolean
-  ): Task[Unit] = {
+                                      srcPath: String,
+                                      targetBucket: String,
+                                      targetPrefix: String,
+                                      parallelism: Int,
+                                      overwrite: Boolean
+                                    ): Task[Unit] = {
     val opts = if (overwrite) List.empty else List(BlobTargetOption.doesNotExist())
     GCSLive
       .listLocalFsObjects(srcPath)
@@ -125,6 +126,49 @@ case class GCSLive(client: Storage) extends GCSApi {
         putObject(targetBucket, targetPath, path, opts)
       }
       .runDrain
+  }
+
+  override def getPubSubNotificationConfiguration(bucket: String, notificationId: String): Task[Notification] = ZIO.attempt{
+    client.getNotification(bucket, notificationId)
+  }
+
+  override def createPubSubNotificationConfiguration(
+                                                      bucket: String,
+                                                      topic: String,
+                                                      customAttributes: Map[String, String],
+                                                      eventType: Option[NotificationInfo.EventType],
+                                                      objectNamePrefix: Option[String],
+                                                      payloadFormat: NotificationInfo.PayloadFormat
+                                                    ): Task[Notification] = ZIO.attempt {
+    val prefix = objectNamePrefix.getOrElse("")
+    val notificationInfo =
+      eventType.fold {
+        NotificationInfo.newBuilder(topic)
+          .setCustomAttributes(customAttributes.asJava)
+          .setEventTypes()
+          .setObjectNamePrefix(prefix)
+          .setPayloadFormat(payloadFormat)
+          .build
+      } { event =>
+        NotificationInfo.newBuilder(topic)
+          .setCustomAttributes(customAttributes.asJava)
+          .setEventTypes(event)
+          .setObjectNamePrefix(prefix)
+          .setPayloadFormat(payloadFormat)
+          .build
+      }
+
+    logger.info(s"Creating Notification Configuration for gs://$bucket/$prefix")
+    client.createNotification(bucket, notificationInfo)
+  }
+
+  override def deletePubSubNotificationConfiguration(bucket: String, notificationId: String): Task[Boolean] = ZIO.attempt{
+    logger.info(s"Deleting Notification Configuration, ID : $notificationId")
+    client.deleteNotification(bucket, notificationId)
+  }
+
+  override def listPubSubNotificationConfiguration(bucket: String): Task[List[Notification]] = ZIO.attempt{
+    client.listNotifications(bucket).asScala.toList
   }
 }
 
