@@ -10,4 +10,5 @@ object Versions {
   val GcpBqVersion              = "2.16.1"
   val GcpDpVersion              = "4.0.6"
   val GcpGcsVersion             = "2.12.0"
+  val PubSubVersion             = "1.120.20"
 }
