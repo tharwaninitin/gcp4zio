@@ -39,3 +39,7 @@ lazy val dp = (project in file("modules/dp"))
 lazy val gcs = (project in file("modules/gcs"))
   .settings(commonSettings)
   .settings(name := "gcp4zio-gcs", libraryDependencies ++= coreLibs ++ gcsLibs ++ testLibs)
+
+lazy val pubsub = (project in file("modules/pubsub"))
+  .settings(commonSettings)
+  .settings(name := "gcp4zio-pubsub", libraryDependencies ++= coreLibs ++ gcsLibs ++ pubSubLibs ++ testLibs)
