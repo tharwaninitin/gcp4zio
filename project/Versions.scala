@@ -7,8 +7,8 @@ object Versions {
   val Sl4jVersion               = "2.0.3"
   val LogbackVersion            = "1.4.4"
   val ScalaJavaCollectionCompat = "2.8.1"
-  val GcpBqVersion              = "2.16.1"
-  val GcpDpVersion              = "4.0.6"
+  val GcpBqVersion              = "2.17.1"
+  val GcpDpVersion              = "4.1.0"
   val GcpGcsVersion             = "2.13.1"
-  val PubSubVersion             = "1.120.20"
+  val GcpPubSubVersion          = "1.120.22"
 }

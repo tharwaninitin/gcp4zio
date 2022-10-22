@@ -23,7 +23,7 @@ object Dependencies {
   )
 
   lazy val pubSubLibs = List(
-    "com.google.cloud" % "google-cloud-pubsub" % PubSubVersion
+    "com.google.cloud" % "google-cloud-pubsub" % GcpPubSubVersion
   )
 
   lazy val testLibs = List(

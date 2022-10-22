@@ -6,7 +6,7 @@ import com.google.pubsub.v1.{Topic, TopicName}
 import zio._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-case class PSTopicLive(client: TopicAdminClient) extends PSTopicApi[Task] {
+case class PSTopic(client: TopicAdminClient) extends PSTopicApi[Task] {
 
   override def createTopic(projectId: String, topicId: String): Task[Topic] = ZIO.attempt {
     val topicName = TopicName.of(projectId, topicId)
@@ -19,7 +19,9 @@ case class PSTopicLive(client: TopicAdminClient) extends PSTopicApi[Task] {
   }
 }
 
-object PSTopicLive {
-  def apply(path: Option[String] = None): TaskLayer[PSTopicEnv] =
-    ZLayer.scoped(ZIO.fromAutoCloseable(PSTopicClient(path)).map(client => PSTopicLive(client)))
+object PSTopic {
+  def live(path: Option[String] = None): TaskLayer[PSTopicEnv] =
+    ZLayer.scoped(ZIO.fromAutoCloseable(PSTopicClient(path)).map(client => PSTopic(client)))
+  val test: TaskLayer[PSTopicEnv] =
+    ZLayer.scoped(ZIO.fromAutoCloseable(PSTopicClient.testClient).map(client => PSTopic(client)))
 }
