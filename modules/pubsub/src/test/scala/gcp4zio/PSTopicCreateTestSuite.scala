@@ -6,6 +6,7 @@ import zio.ZIO
 import zio.test.Assertion.equalTo
 import zio.test._
 
+@SuppressWarnings(Array("org.wartremover.warts.ToString"))
 object PSTopicCreateTestSuite {
   val spec: Spec[PSTopicEnv, Any] = test("Create Topic") {
     val step = PSTopicApi.createTopic(gcsProject, topic)
