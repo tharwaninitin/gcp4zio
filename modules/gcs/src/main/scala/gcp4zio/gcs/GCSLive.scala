@@ -8,7 +8,7 @@ import zio.stream._
 import java.io.{IOException, InputStream, OutputStream}
 import java.nio.channels.Channels
 import java.nio.file.{Files, Path, Paths}
-import scala.jdk.CollectionConverters.{iterableAsScalaIterableConverter, mapAsJavaMapConverter}
+import scala.jdk.CollectionConverters._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
 case class GCSLive(client: Storage) extends GCSApi {
@@ -128,11 +128,11 @@ case class GCSLive(client: Storage) extends GCSApi {
       .runDrain
   }
 
-  override def getPubSubNotificationConfiguration(bucket: String, notificationId: String): Task[Notification] = ZIO.attempt {
+  override def getPSNotification(bucket: String, notificationId: String): Task[Notification] = ZIO.attempt {
     client.getNotification(bucket, notificationId)
   }
 
-  override def createPubSubNotificationConfiguration(
+  override def createPSNotification(
       bucket: String,
       topic: String,
       customAttributes: Map[String, String],
@@ -164,12 +164,12 @@ case class GCSLive(client: Storage) extends GCSApi {
     client.createNotification(bucket, notificationInfo)
   }
 
-  override def deletePubSubNotificationConfiguration(bucket: String, notificationId: String): Task[Boolean] = ZIO.attempt {
+  override def deletePSNotification(bucket: String, notificationId: String): Task[Boolean] = ZIO.attempt {
     logger.info(s"Deleting Notification Configuration, ID : $notificationId")
     client.deleteNotification(bucket, notificationId)
   }
 
-  override def listPubSubNotificationConfiguration(bucket: String): Task[List[Notification]] = ZIO.attempt {
+  override def listPSNotification(bucket: String): Task[List[Notification]] = ZIO.attempt {
     client.listNotifications(bucket).asScala.toList
   }
 }

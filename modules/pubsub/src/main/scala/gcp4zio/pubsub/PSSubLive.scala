@@ -6,7 +6,7 @@ import com.google.pubsub.v1.{PushConfig, Subscription, SubscriptionName, TopicNa
 import zio._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-case class PubSubSubscriptionLive(subscriptionClient: SubscriptionAdminClient) extends PubSubSubscriptionApi[Task] {
+case class PSSubLive(subscriptionClient: SubscriptionAdminClient) extends PSSubApi[Task] {
 
   override def createSubscription(
       project: String,
@@ -25,7 +25,7 @@ case class PubSubSubscriptionLive(subscriptionClient: SubscriptionAdminClient) e
   }
 }
 
-object PubSubSubscriptionLive {
-  def apply(path: Option[String] = None): TaskLayer[PubSubSubscriptionEnv] =
-    ZLayer.scoped(ZIO.fromAutoCloseable(PubSubSubscriptionClient(path)).map(client => PubSubSubscriptionLive(client)))
+object PSSubLive {
+  def apply(path: Option[String] = None): TaskLayer[PSSubEnv] =
+    ZLayer.scoped(ZIO.fromAutoCloseable(PSSubClient(path)).map(client => PSSubLive(client)))
 }

@@ -26,7 +26,7 @@ lazy val gcp4zio = (project in file("."))
     crossScalaVersions := Nil, // crossScalaVersions must be set to Nil on the aggregating project
     publish / skip     := true
   )
-  .aggregate(bq, dp, gcs)
+  .aggregate(bq, dp, gcs, pubsub)
 
 lazy val bq = (project in file("modules/bq"))
   .settings(commonSettings)

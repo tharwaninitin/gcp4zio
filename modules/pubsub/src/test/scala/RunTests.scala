@@ -1,13 +1,13 @@
 import zio.test._
-//import gcp4zio.pubsub.{PubSubSubscriptionLive, PubSubTopicLive}
-//import gcp4zio.{PubSubSubscriptionTestSuite, PubSubTopicTestSuite}
+import gcp4zio.pubsub.{PSSubLive, PSTopicLive}
+import gcp4zio.{PSSubTestSuite, PSTopicTestSuite}
 
 object RunTests extends ZIOSpecDefault {
 
-  // private val env = PubSubTopicLive() ++ PubSubSubscriptionLive()
+  private val env = PSTopicLive() ++ PSSubLive()
 
-  override def spec: Spec[TestEnvironment, Any] = suite("PubSubTopicAndSubscription APIs")(
-    // PubSubTopicTestSuite.spec,
-    // PubSubSubscriptionTestSuite.spec
-  ) @@ TestAspect.sequential // .provideShared(env.orDie)
+  override def spec: Spec[TestEnvironment, Any] = (suite("PubSubTopicAndSubscription APIs")(
+    PSTopicTestSuite.spec,
+    PSSubTestSuite.spec
+  ) @@ TestAspect.sequential).provideShared(env.orDie)
 }

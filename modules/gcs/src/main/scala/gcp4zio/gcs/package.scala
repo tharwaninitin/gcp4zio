@@ -1,10 +1,11 @@
 package gcp4zio
 
-import gcp4zio.utils.ApplicationLogger
+import org.slf4j.{Logger, LoggerFactory}
 import zio.stream.{Sink, Stream, ZSink, ZStream}
 import java.io.IOException
 
-package object gcs extends ApplicationLogger {
+package object gcs {
+  lazy val logger: Logger = LoggerFactory.getLogger(getClass.getName)
   type GCSEnv           = GCSApi
   type GCSStream        = Stream[IOException, Byte]
   type GCSStreamWithEnv = ZStream[GCSEnv, IOException, Byte]

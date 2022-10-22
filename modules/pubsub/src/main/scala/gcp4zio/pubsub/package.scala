@@ -1,9 +1,11 @@
 package gcp4zio
 
-import gcp4zio.utils.ApplicationLogger
+import org.slf4j.{Logger, LoggerFactory}
 import zio.Task
 
-package object pubsub extends ApplicationLogger {
-  type PubSubTopicEnv        = PubSubTopicApi[Task]
-  type PubSubSubscriptionEnv = PubSubSubscriptionApi[Task]
+package object pubsub {
+  lazy val logger: Logger = LoggerFactory.getLogger(getClass.getName)
+
+  type PSTopicEnv = PSTopicApi[Task]
+  type PSSubEnv   = PSSubApi[Task]
 }

@@ -7,7 +7,7 @@ import zio.test.Assertion.equalTo
 import zio.test._
 
 object GCSCopyTestSuite {
-  val spec: Spec[TestEnvironment with GCSEnv, Any] =
+  val spec: Spec[GCSEnv, Any] =
     suite("GCS Copy Apis")(
       test("Execute copyObjectsLOCALtoGCS single file") {
         val step = GCSApi.copyObjectsLOCALtoGCS(filePathCsv, gcsBucket, "temp/test/ratings.csv", 2, true)

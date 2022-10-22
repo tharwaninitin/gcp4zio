@@ -3,34 +3,36 @@ package pubsub
 
 import com.google.api.gax.core.FixedCredentialsProvider
 import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
-import com.google.cloud.pubsub.v1.{TopicAdminClient, TopicAdminSettings}
+import com.google.cloud.pubsub.v1.{SubscriptionAdminClient, SubscriptionAdminSettings}
 import zio.{Task, ZIO}
 
 import java.io.FileInputStream
 
-object PubSubTopicClient {
+object PSSubClient {
 
-  private def getTopicClient(path: String): TopicAdminClient = {
+  private def getSubscriptionClient(path: String): SubscriptionAdminClient = {
     val credentials: GoogleCredentials = ServiceAccountCredentials.fromStream(new FileInputStream(path))
-    val topicAdminSettings =
-      TopicAdminSettings.newBuilder.setCredentialsProvider(FixedCredentialsProvider.create(credentials)).build
-    TopicAdminClient.create(topicAdminSettings)
+    val subscriptionAdminSettings = SubscriptionAdminSettings
+      .newBuilder()
+      .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
+      .build
+    SubscriptionAdminClient.create(subscriptionAdminSettings)
   }
 
-  def apply(path: Option[String]): Task[TopicAdminClient] = ZIO.attempt {
+  def apply(path: Option[String]): Task[SubscriptionAdminClient] = ZIO.attempt {
     val envPath: String = sys.env.getOrElse("GOOGLE_APPLICATION_CREDENTIALS", "NOT_SET_IN_ENV")
 
     path match {
       case Some(p) =>
         logger.info("Using GCP credentials from values passed in function")
-        getTopicClient(p)
+        getSubscriptionClient(p)
       case None =>
         if (envPath == "NOT_SET_IN_ENV") {
           logger.info("Using GCP credentials from local sdk")
-          TopicAdminClient.create()
+          SubscriptionAdminClient.create()
         } else {
           logger.info("Using GCP credentials from environment variable GOOGLE_APPLICATION_CREDENTIALS")
-          getTopicClient(envPath)
+          getSubscriptionClient(envPath)
         }
     }
   }

@@ -47,3 +47,18 @@ jobs:
           java-version: ${{ matrix.java-version }}
       - name: Run GCS Tests
         run: sbt ";project gcs; +Test/compile"
+  pubsub:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [ 8, 11, 14 ]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: ${{ matrix.java-version }}
+      - name: Run PubSub Tests
+        run: sbt ";project pubsub; +Test/compile"
