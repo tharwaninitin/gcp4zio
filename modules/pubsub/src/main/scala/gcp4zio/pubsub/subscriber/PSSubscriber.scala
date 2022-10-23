@@ -17,12 +17,12 @@ object PSSubscriber {
   val subscribe: ZStream[PSSubscriber with Scope, Throwable, Record] =
     ZStream.environmentWithStream[PSSubscriber](_.get.subscribe)
 
-  def live(project: String, subscription: String, config: Config = Config()): TaskLayer[PSSubscriber] = {
-    val program = for {
-      queue <- ZIO.attempt(new LinkedBlockingQueue[Either[InternalPubSubError, Record]](config.maxQueueSize))
-      _     <- PSSubscriberClient(project, subscription, config, queue)
-    } yield queue
-    ZLayer.scoped(program.map(queue => PSSubscriberImpl(queue)))
+  def live(project: String, subscription: String, config: Config = Config()): TaskLayer[PSSubscriber] = ZLayer.fromZIO {
+    for {
+      queue      <- ZIO.attempt(new LinkedBlockingQueue[Either[InternalPubSubError, Record]](config.maxQueueSize))
+      subscriber <- PSSubscriberClient(project, subscription, config, queue)
+      impl = PSSubscriberImpl(subscriber, queue, config)
+    } yield impl
   }
 
   def test(project: String, subscription: String, config: Config = Config()): TaskLayer[PSSubscriber] = {

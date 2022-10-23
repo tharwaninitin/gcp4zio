@@ -14,24 +14,47 @@ object PSProduceConsume extends ZIOAppDefault {
   lazy val subscription: String = sys.env("SUBSCRIPTION")
   lazy val topic: String        = sys.env("TOPIC")
 
-  private val createTopic = PSTopicApi.createTopic(gcsProject, topic).provide(PSTopic.test)
+  private val createTopic = PSTopicApi.createTopic(gcsProject, topic)
 
-  private val createSubscription = PSSubApi.createPullSubscription(gcsProject, subscription, topic).provide(PSSub.test)
+  private val deleteTopic = PSTopicApi.deleteTopic(gcsProject, topic)
+
+  private val createSubscription = PSSubApi.createPullSubscription(gcsProject, subscription, topic)
+
+  private val deleteSubscription = PSSubApi.deleteSubscription(gcsProject, subscription)
 
   implicit val encoder: MessageEncoder[String] = (a: String) => Right(a.getBytes(Charset.defaultCharset()))
 
   private val produce = Random.nextInt
     .flatMap(ri => PSPublisher.produce(s"Test Message $ri"))
+    .tap(msgId => ZIO.logInfo(s"Message ID $msgId published"))
     .repeat(Schedule.spaced(5.seconds) && Schedule.forever)
-    .provide(PSPublisher.test(gcsProject, topic))
-    .fork
 
   private val consume = PSSubscriber.subscribe
     .mapZIO { msg =>
       ZIO.logInfo(msg.value.toString) *> msg.ack
     }
+    .take(10)
     .runDrain
-    .provideSomeLayer[Scope](PSSubscriber.test(gcsProject, subscription))
 
-  override def run: ZIO[Scope, Throwable, Unit] = createTopic *> createSubscription *> produce *> consume
+  private val flow = for {
+    _ <- createTopic.tap(t => ZIO.logInfo(s"Created Topic ${t.toString}"))
+    _ <- createSubscription.tap(s => ZIO.logInfo(s"Created Subscription ${s.toString}"))
+    _ <- ZIO.logInfo("Starting Publisher") *> produce.fork
+    _ <- ZIO.logInfo("Starting Subscriber") *> consume
+  } yield ()
+
+  private val cleanup = for {
+    _ <- deleteSubscription.zipLeft(ZIO.logInfo(s"Deleted Subscription"))
+    _ <- deleteTopic.zipLeft(ZIO.logInfo(s"Deleted Topic"))
+  } yield ()
+
+  override def run: ZIO[Scope, Throwable, Unit] =
+    flow
+      .ensuring(cleanup.ignore)
+      .provideSome[Scope](
+        PSTopic.test,
+        PSSub.test,
+        PSPublisher.test(gcsProject, topic),
+        PSSubscriber.test(gcsProject, subscription)
+      )
 }

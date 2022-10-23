@@ -19,6 +19,6 @@ package object subscriber {
       maxAckExtensionPeriod: FiniteDuration = 10.seconds,
       awaitTerminatePeriod: FiniteDuration = 30.seconds,
       customizeSubscriber: Option[Subscriber.Builder => Subscriber.Builder] = None, // modify subscriber
-      onFailedTerminate: Throwable => Task[Unit] = e => ZIO.logError(s"Exception: ${e.getMessage}")
+      onFailedTerminate: Throwable => Task[Unit] = e => ZIO.logError(s"Exception while shutting down Subscriber: ${e.getMessage}")
   )
 }
