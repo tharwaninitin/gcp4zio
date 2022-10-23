@@ -13,7 +13,7 @@ import java.net.URI
 // export DP_CLUSTER=
 // export DP_ENDPOINT=
 
-object DPGCSExample extends ZIOAppDefault with ApplicationLogger {
+object DPGCS extends ZIOAppDefault with ApplicationLogger {
   val gcpProject: String = sys.env("GCP_PROJECT")
   val gcpRegion: String  = sys.env("GCP_REGION")
   val dpCluster: String  = sys.env("DP_CLUSTER")

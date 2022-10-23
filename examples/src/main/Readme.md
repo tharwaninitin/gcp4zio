@@ -7,10 +7,10 @@ Run below commands in other terminal
 ```shell
 export GCS_PROJECT=testproject
 export TOPIC=testtopic
-export NON_EXISTING_TOPIC=notopic
 export SUBSCRIPTION=testsub
-export SUBSCRIPTION_2=testsub2
+
 $(gcloud beta emulators pubsub env-init)
-sbt "project pubsub; test"
+
+sbt "project examples; runMain PSProduceConsume"
 ```
 
