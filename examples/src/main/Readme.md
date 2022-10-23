@@ -11,6 +11,6 @@ export SUBSCRIPTION=testsub
 
 $(gcloud beta emulators pubsub env-init)
 
-sbt "project examples; runMain PSProduceConsume"
+sbt "project examples; runMain PS"
 ```
 

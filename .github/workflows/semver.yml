@@ -11,8 +11,8 @@ jobs:
         distribution: 'adopt'
         java-version: 11
         cache: 'sbt'
-    - name: Run Semantic Versioning Policy Check for BQ
-      run: sbt bq/versionPolicyCheck
+#    - name: Run Semantic Versioning Policy Check for BQ
+#      run: sbt bq/versionPolicyCheck
     - name: Run Semantic Versioning Policy Check for DP
       run: sbt dp/versionPolicyCheck
     - name: Run Semantic Versioning Policy Check for PUBSUB

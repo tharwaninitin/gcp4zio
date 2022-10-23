@@ -14,6 +14,7 @@ case class PSSubscriberImpl(subscriber: Subscriber, queue: BlockingQueue[Either[
 
   private class PubsubErrorListener[R](queue: BlockingQueue[Either[InternalPubSubError, R]]) extends ApiService.Listener {
     override def failed(from: ApiService.State, failure: Throwable): Unit =
+      // Puts error in queue to stop/fail the stream which will consumes from this queue
       queue.put(Left(InternalPubSubError(failure)))
   }
 
@@ -21,7 +22,7 @@ case class PSSubscriberImpl(subscriber: Subscriber, queue: BlockingQueue[Either[
     for {
       nextOpt <- ZIO.attempt(messages.poll()) // `poll` is non-blocking, returning `null` if queue is empty
       next <-
-        if (nextOpt == null) ZIO.attempt(messages.take()).interruptible // `take` can wait for an element, hence interruptible
+        if (nextOpt == null) ZIO.attempt(messages.take()) // `take` can wait for an element i.e. it is blocking
         else ZIO.succeed(nextOpt)
       chunk <- ZIO.attempt {
         val elements = new util.ArrayList[A]
@@ -32,29 +33,29 @@ case class PSSubscriberImpl(subscriber: Subscriber, queue: BlockingQueue[Either[
       }
     } yield chunk
 
-  private val startStreamingPull: RIO[Scope, ApiService] = ZIO.acquireRelease(
+  private val startAsyncPullSubscriber: RIO[Scope, Unit] = ZIO.acquireRelease(
     ZIO
       .attempt {
         subscriber.addListener(new PubsubErrorListener(queue), MoreExecutors.directExecutor)
-        subscriber.startAsync()
+        subscriber.startAsync().awaitRunning() // starts the subscriber and waits for it to reach the running state
       }
       .tapBoth(
-        e => ZIO.logError(s"${e.toString}"),
-        _ => ZIO.logInfo(s"Successfully started Subscriber for ${subscriber.getSubscriptionNameString}")
+        e => ZIO.logError(s"Exception occurred while starting subscriber ${e.toString}"),
+        _ => ZIO.logInfo(s"Listening for messages on ${subscriber.getSubscriptionNameString}")
       )
-  ) { service =>
+  ) { _ =>
     ZIO
-      .attempt(service.stopAsync().awaitTerminated(config.awaitTerminatePeriod.toSeconds, TimeUnit.SECONDS))
+      .attempt(subscriber.stopAsync().awaitTerminated(config.awaitTerminatePeriod.toSeconds, TimeUnit.SECONDS))
       .tapBoth(
         config.onFailedTerminate,
-        _ => ZIO.logInfo(s"Terminated Subscriber for ${subscriber.getSubscriptionNameString}")
+        _ => ZIO.logInfo(s"Terminated subscriber for ${subscriber.getSubscriptionNameString}")
       )
       .ignore
   }
 
   val subscribe: ZStream[Scope, Throwable, Record] =
     for {
-      _     <- ZStream.fromZIO(startStreamingPull)
+      _     <- ZStream.fromZIO(startAsyncPullSubscriber)
       taken <- ZStream.repeatZIOChunk(takeNextElements(queue))
       msg   <- ZStream.fromZIO(ZIO.fromEither(taken))
     } yield msg

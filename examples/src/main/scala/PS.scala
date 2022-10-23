@@ -6,7 +6,7 @@ import zio.logging.backend.SLF4J
 import java.nio.charset.Charset
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-object PSProduceConsume extends ZIOAppDefault {
+object PS extends ZIOAppDefault {
 
   override val bootstrap = Runtime.removeDefaultLoggers >>> SLF4J.slf4j
 
