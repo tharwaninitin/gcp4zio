@@ -2,8 +2,7 @@ package gcp4zio
 
 import com.google.cloud.storage.Storage.{BlobTargetOption, BlobWriteOption}
 import gcp4zio.Global._
-import gcp4zio.gcs.{GCSApi, GCSEnv}
-import gcp4zio.utils.ApplicationLogger
+import gcp4zio.gcs.{logger, GCSApi, GCSEnv}
 import zio.ZIO
 import zio.test.Assertion.equalTo
 import zio.stream._
@@ -13,9 +12,9 @@ import java.nio.file.Paths
 import java.util.UUID
 
 @SuppressWarnings(Array("org.wartremover.warts.AutoUnboxing"))
-object GCSTestSuite extends ApplicationLogger {
+object GCSTestSuite {
   val prefix = "temp/test/ratings.csv"
-  val spec: Spec[TestEnvironment with GCSEnv, Any] =
+  val spec: Spec[GCSEnv, Any] =
     suite("GCS Apis")(
       test("Execute putObject") {
         val path = Paths.get(filePathCsv)

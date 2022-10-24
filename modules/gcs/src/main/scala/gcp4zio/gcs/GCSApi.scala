@@ -1,7 +1,8 @@
 package gcp4zio
 package gcs
 
-import com.google.cloud.storage.Blob
+import com.google.cloud.storage.NotificationInfo.PayloadFormat
+import com.google.cloud.storage.{Blob, Notification, NotificationInfo}
 import com.google.cloud.storage.Storage.{BlobListOption, BlobTargetOption, BlobWriteOption}
 import zio.stream._
 import zio._
@@ -36,6 +37,17 @@ trait GCSApi {
       parallelism: Int,
       overwrite: Boolean
   ): Task[Unit]
+  def getPSNotification(bucket: String, notificationId: String): Task[Notification]
+  def createPSNotification(
+      bucket: String,
+      topic: String,
+      customAttributes: Map[String, String],
+      eventType: Option[NotificationInfo.EventType],
+      objectNamePrefix: Option[String],
+      payloadFormat: NotificationInfo.PayloadFormat
+  ): Task[Notification]
+  def deletePSNotification(bucket: String, prefix: String): Task[Boolean]
+  def listPSNotification(bucket: String): Task[List[Notification]]
 }
 
 object GCSApi {
@@ -86,4 +98,21 @@ object GCSApi {
       overwrite: Boolean
   ): ZIO[GCSEnv, Throwable, Unit] =
     ZIO.environmentWithZIO(_.get.copyObjectsLOCALtoGCS(srcPath, targetBucket, targetPrefix, parallelism, overwrite))
+  def getPSNotification(bucket: String, notificationId: String): ZIO[GCSEnv, Throwable, Notification] =
+    ZIO.environmentWithZIO(_.get.getPSNotification(bucket, notificationId))
+  def createPSNotification(
+      bucket: String,
+      topic: String,
+      customAttributes: Map[String, String] = Map[String, String]().empty,
+      eventType: Option[NotificationInfo.EventType] = None,
+      objectNamePrefix: Option[String] = None,
+      payloadFormat: NotificationInfo.PayloadFormat = PayloadFormat.JSON_API_V1
+  ): ZIO[GCSEnv, Throwable, Notification] =
+    ZIO.environmentWithZIO(
+      _.get.createPSNotification(bucket, topic, customAttributes, eventType, objectNamePrefix, payloadFormat)
+    )
+  def deletePSNotification(bucket: String, prefix: String): ZIO[GCSEnv, Throwable, Boolean] =
+    ZIO.environmentWithZIO(_.get.deletePSNotification(bucket, prefix))
+  def listPSNotification(bucket: String): ZIO[GCSEnv, Throwable, List[Notification]] =
+    ZIO.environmentWithZIO(_.get.listPSNotification(bucket: String))
 }

@@ -10,6 +10,7 @@ lazy val examples = (project in file("examples"))
     libraryDependencies ++= List(
       "com.github.tharwaninitin" %% "gcp4zio-dp"      % version.value,
       "com.github.tharwaninitin" %% "gcp4zio-gcs"     % version.value,
+      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % version.value,
       "ch.qos.logback"            % "logback-classic" % LogbackVersion
     ),
     scalacOptions ++= {

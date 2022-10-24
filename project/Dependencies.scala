@@ -7,7 +7,7 @@ object Dependencies {
     "dev.zio"                %% "zio"                     % ZioVersion,
     "dev.zio"                %% "zio-streams"             % ZioVersion,
     "org.scala-lang.modules" %% "scala-collection-compat" % ScalaJavaCollectionCompat,
-    "org.slf4j"               % "slf4j-api"               % Sl4jVersion
+    "dev.zio"                %% "zio-logging-slf4j"       % ZioLogVersion
   )
 
   lazy val bqLibs = List(
@@ -20,6 +20,10 @@ object Dependencies {
 
   lazy val gcsLibs = List(
     "com.google.cloud" % "google-cloud-storage" % GcpGcsVersion
+  )
+
+  lazy val pubSubLibs = List(
+    "com.google.cloud" % "google-cloud-pubsub" % GcpPubSubVersion
   )
 
   lazy val testLibs = List(
