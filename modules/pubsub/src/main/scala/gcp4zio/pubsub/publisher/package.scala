@@ -2,7 +2,6 @@ package gcp4zio.pubsub
 
 import com.google.cloud.pubsub.v1.Publisher
 import zio.{Task, ZIO}
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration._
 
 package object publisher {
@@ -24,4 +23,5 @@ package object publisher {
       awaitTerminatePeriod: FiniteDuration = 30.seconds,                         // termination
       onFailedTerminate: Throwable => Task[Unit] = e => ZIO.logError(s"Exception: ${e.getMessage}")
   )
+
 }

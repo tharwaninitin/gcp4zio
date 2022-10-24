@@ -13,8 +13,8 @@ jobs:
         cache: 'sbt'
 #    - name: Run Semantic Versioning Policy Check for BQ
 #      run: sbt bq/versionPolicyCheck
-    - name: Run Semantic Versioning Policy Check for DP
-      run: sbt dp/versionPolicyCheck
+#    - name: Run Semantic Versioning Policy Check for DP
+#      run: sbt dp/versionPolicyCheck
     - name: Run Semantic Versioning Policy Check for PUBSUB
       run: sbt pubsub/versionPolicyCheck
 #    - name: Run Semantic Versioning Policy Check for GCS

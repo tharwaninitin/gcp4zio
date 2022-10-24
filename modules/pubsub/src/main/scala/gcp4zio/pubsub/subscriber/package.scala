@@ -7,6 +7,7 @@ import scala.concurrent.duration._
 import scala.util.control.NoStackTrace
 
 package object subscriber {
+
   case class Record(value: PubsubMessage, ack: Task[Unit], nack: Task[Unit])
 
   case class InternalPubSubError(cause: Throwable) extends Throwable("Java PubSub consumer failed", cause) with NoStackTrace
@@ -19,4 +20,5 @@ package object subscriber {
       customizeSubscriber: Option[Subscriber.Builder => Subscriber.Builder] = None, // modify subscriber
       onFailedTerminate: Throwable => Task[Unit] = e => ZIO.logError(s"Exception while shutting down Subscriber: ${e.getMessage}")
   )
+
 }

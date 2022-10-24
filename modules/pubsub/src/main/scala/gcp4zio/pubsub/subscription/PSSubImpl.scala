@@ -1,12 +1,11 @@
-package gcp4zio
-package pubsub
+package gcp4zio.pubsub.subscription
 
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient
-import com.google.pubsub.v1.{BigQueryConfig, PushConfig, Subscription, SubscriptionName, TopicName}
+import com.google.pubsub.v1._
 import zio._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-case class PSSub(client: SubscriptionAdminClient) extends PSSubApi[Task] {
+case class PSSubImpl(client: SubscriptionAdminClient) extends PSSubscription[Task] {
 
   override def createPullSubscription(
       project: String,
@@ -56,9 +55,4 @@ case class PSSub(client: SubscriptionAdminClient) extends PSSubApi[Task] {
   }
 }
 
-object PSSub {
-  def live(path: Option[String] = None): TaskLayer[PSSubEnv] =
-    ZLayer.scoped(ZIO.fromAutoCloseable(PSSubClient(path)).map(client => PSSub(client)))
-  val test: TaskLayer[PSSubEnv] =
-    ZLayer.scoped(ZIO.fromAutoCloseable(PSSubClient.testClient).map(client => PSSub(client)))
-}
+object PSSubImpl {}

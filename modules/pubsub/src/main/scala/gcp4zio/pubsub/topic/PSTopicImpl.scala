@@ -1,12 +1,11 @@
-package gcp4zio
-package pubsub
+package gcp4zio.pubsub.topic
 
 import com.google.cloud.pubsub.v1.TopicAdminClient
 import com.google.pubsub.v1.{Topic, TopicName}
 import zio._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-case class PSTopic(client: TopicAdminClient) extends PSTopicApi[Task] {
+case class PSTopicImpl(client: TopicAdminClient) extends PSTopic[Task] {
 
   override def createTopic(projectId: String, topicId: String): Task[Topic] = ZIO.attempt {
     val topicName = TopicName.of(projectId, topicId)
@@ -17,11 +16,4 @@ case class PSTopic(client: TopicAdminClient) extends PSTopicApi[Task] {
     val topicName = TopicName.of(project, topic)
     client.deleteTopic(topicName)
   }
-}
-
-object PSTopic {
-  def live(path: Option[String] = None): TaskLayer[PSTopicEnv] =
-    ZLayer.scoped(ZIO.fromAutoCloseable(PSTopicClient(path)).map(client => PSTopic(client)))
-  val test: TaskLayer[PSTopicEnv] =
-    ZLayer.scoped(ZIO.fromAutoCloseable(PSTopicClient.testClient).map(client => PSTopic(client)))
 }

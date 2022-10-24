@@ -1,10 +1,10 @@
-package gcp4zio
-package pubsub
+package gcp4zio.pubsub.subscription
 
 import com.google.pubsub.v1.Subscription
+import gcp4zio.pubsub.PSSubEnv
 import zio._
 
-trait PSSubApi[F[_]] {
+trait PSSubscription[F[_]] {
 
   /** @param project
     *   GCP Project ID
@@ -68,7 +68,7 @@ trait PSSubApi[F[_]] {
   def deleteSubscription(project: String, subscription: String): F[Unit]
 }
 
-object PSSubApi {
+object PSSubscription {
 
   /** @param project
     *   GCP Project ID
@@ -139,4 +139,22 @@ object PSSubApi {
     */
   def deleteSubscription(project: String, subscription: String): ZIO[PSSubEnv, Throwable, Unit] =
     ZIO.environmentWithZIO(_.get.deleteSubscription(project, subscription))
+
+  /** Actual live layer
+    *
+    * @param path
+    *   Optional path to google service account credential file
+    * @return
+    *   PSSubEnv
+    */
+  def live(path: Option[String] = None): TaskLayer[PSSubEnv] =
+    ZLayer.scoped(ZIO.fromAutoCloseable(PSSubClient(path)).map(client => PSSubImpl(client)))
+
+  /** Test layer
+    *
+    * @return
+    *   PSSubEnv
+    */
+  val test: TaskLayer[PSSubEnv] =
+    ZLayer.scoped(ZIO.fromAutoCloseable(PSSubClient.testClient).map(client => PSSubImpl(client)))
 }

@@ -1,11 +1,11 @@
-package gcp4zio
-package pubsub
+package gcp4zio.pubsub.topic
 
 import com.google.api.gax.core.{FixedCredentialsProvider, NoCredentialsProvider}
 import com.google.api.gax.grpc.GrpcTransportChannel
 import com.google.api.gax.rpc.FixedTransportChannelProvider
 import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
 import com.google.cloud.pubsub.v1.{TopicAdminClient, TopicAdminSettings}
+import gcp4zio.pubsub.logger
 import io.grpc.ManagedChannelBuilder
 import zio.{Task, ZIO}
 import java.io.FileInputStream
