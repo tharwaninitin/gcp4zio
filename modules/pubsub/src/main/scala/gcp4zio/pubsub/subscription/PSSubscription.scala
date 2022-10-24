@@ -148,7 +148,7 @@ object PSSubscription {
     *   PSSubEnv
     */
   def live(path: Option[String] = None): TaskLayer[PSSubEnv] =
-    ZLayer.scoped(ZIO.fromAutoCloseable(PSSubClient(path)).map(client => PSSubImpl(client)))
+    ZLayer.scoped(ZIO.fromAutoCloseable(PSSubscriptionClient(path)).map(client => PSSubscriptionImpl(client)))
 
   /** Test layer
     *
@@ -156,5 +156,5 @@ object PSSubscription {
     *   PSSubEnv
     */
   val test: TaskLayer[PSSubEnv] =
-    ZLayer.scoped(ZIO.fromAutoCloseable(PSSubClient.testClient).map(client => PSSubImpl(client)))
+    ZLayer.scoped(ZIO.fromAutoCloseable(PSSubscriptionClient.testClient).map(client => PSSubscriptionImpl(client)))
 }

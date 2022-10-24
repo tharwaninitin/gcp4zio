@@ -5,7 +5,7 @@ import com.google.pubsub.v1._
 import zio._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-case class PSSubImpl(client: SubscriptionAdminClient) extends PSSubscription[Task] {
+case class PSSubscriptionImpl(client: SubscriptionAdminClient) extends PSSubscription[Task] {
 
   override def createPullSubscription(
       project: String,
@@ -54,5 +54,3 @@ case class PSSubImpl(client: SubscriptionAdminClient) extends PSSubscription[Tas
     client.deleteSubscription(subscriptionName)
   }
 }
-
-object PSSubImpl {}

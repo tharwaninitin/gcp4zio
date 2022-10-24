@@ -1,6 +1,7 @@
 import gcp4zio.pubsub.publisher.{MessageEncoder, PSPublisher}
 import gcp4zio.pubsub.subscriber.PSSubscriber
-import gcp4zio.pubsub.{PSSub, PSSubApi, PSTopic, PSTopicApi}
+import gcp4zio.pubsub.subscription.PSSubscription
+import gcp4zio.pubsub.topic.PSTopic
 import zio._
 import zio.logging.backend.SLF4J
 import java.nio.charset.Charset
@@ -14,33 +15,36 @@ object PS extends ZIOAppDefault {
   lazy val subscription: String = sys.env("SUBSCRIPTION")
   lazy val topic: String        = sys.env("TOPIC")
 
-  private val createTopic = PSTopicApi.createTopic(gcsProject, topic)
+  private val createTopic = PSTopic.createTopic(gcsProject, topic)
 
-  private val deleteTopic = PSTopicApi.deleteTopic(gcsProject, topic)
+  private val deleteTopic = PSTopic.deleteTopic(gcsProject, topic)
 
-  private val createSubscription = PSSubApi.createPullSubscription(gcsProject, subscription, topic)
+  private val createSubscription = PSSubscription.createPullSubscription(gcsProject, subscription, topic)
 
-  private val deleteSubscription = PSSubApi.deleteSubscription(gcsProject, subscription)
+  private val deleteSubscription = PSSubscription.deleteSubscription(gcsProject, subscription)
 
   implicit val encoder: MessageEncoder[String] = (a: String) => Right(a.getBytes(Charset.defaultCharset()))
 
-  private val produce = Random.nextInt
+  private val produceMessages = Random.nextInt
     .flatMap(ri => PSPublisher.produce(s"Test Message $ri"))
     .tap(msgId => ZIO.logInfo(s"Message ID $msgId published"))
     .repeat(Schedule.spaced(5.seconds) && Schedule.forever)
 
-  private val consume = PSSubscriber.subscribe
+  private val consumeMessages = PSSubscriber.subscribe
     .mapZIO { msg =>
       ZIO.logInfo(msg.value.toString) *> msg.ack
     }
     .take(10)
     .runDrain
 
-  private val flow = for {
+  private val setup = for {
     _ <- createTopic.tap(t => ZIO.logInfo(s"Created Topic ${t.toString}"))
     _ <- createSubscription.tap(s => ZIO.logInfo(s"Created Subscription ${s.toString}"))
-    _ <- ZIO.logInfo("Starting Publisher") *> produce.fork
-    _ <- ZIO.logInfo("Starting Subscriber") *> consume
+  } yield ()
+
+  private val flow = for {
+    _ <- ZIO.logInfo("Starting Publisher") *> produceMessages.fork
+    _ <- ZIO.logInfo("Starting Subscriber") *> consumeMessages
   } yield ()
 
   private val cleanup = for {
@@ -49,11 +53,11 @@ object PS extends ZIOAppDefault {
   } yield ()
 
   override def run: ZIO[Scope, Throwable, Unit] =
-    flow
+    (setup *> flow)
       .ensuring(cleanup.ignore)
       .provideSome[Scope](
         PSTopic.test,
-        PSSub.test,
+        PSSubscription.test,
         PSPublisher.test(gcsProject, topic),
         PSSubscriber.test(gcsProject, subscription)
       )

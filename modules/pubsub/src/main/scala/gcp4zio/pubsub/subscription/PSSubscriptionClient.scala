@@ -10,7 +10,7 @@ import io.grpc.ManagedChannelBuilder
 import zio.{Task, ZIO}
 import java.io.FileInputStream
 
-object PSSubClient {
+object PSSubscriptionClient {
 
   private def getSubscriptionClient(path: String): SubscriptionAdminClient = {
     val credentials: GoogleCredentials = ServiceAccountCredentials.fromStream(new FileInputStream(path))
