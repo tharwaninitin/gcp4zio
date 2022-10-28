@@ -7,7 +7,7 @@ import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
 import com.google.cloud.pubsub.v1.{TopicAdminClient, TopicAdminSettings}
 import gcp4zio.pubsub.logger
 import io.grpc.ManagedChannelBuilder
-import zio.{Task, ZIO}
+import zio.{RIO, Scope, Task, ZIO}
 import java.io.FileInputStream
 
 object PSTopicClient {
@@ -32,7 +32,13 @@ object PSTopicClient {
     TopicAdminClient.create(topicAdminSettings)
   }
 
-  def apply(path: Option[String]): Task[TopicAdminClient] = ZIO.attempt {
+  /** Returns AutoCloseable TopicAdminClient wrapped in ZIO
+    * @param path
+    *   Optional path to Service Account Credentials file
+    * @return
+    *   RIO[Scope, TopicAdminClient]
+    */
+  def apply(path: Option[String]): RIO[Scope, TopicAdminClient] = ZIO.fromAutoCloseable(ZIO.attempt {
     val envPath: String = sys.env.getOrElse("GOOGLE_APPLICATION_CREDENTIALS", "NOT_SET_IN_ENV")
 
     path match {
@@ -48,5 +54,5 @@ object PSTopicClient {
           getTopicClient(envPath)
         }
     }
-  }
+  })
 }

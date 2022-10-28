@@ -3,13 +3,13 @@ package gcp4zio
 import com.google.monitoring.v3.TimeInterval
 import com.google.protobuf.util.Timestamps
 import gcp4zio.Global._
-import gcp4zio.monitoring.{Monitoring, MonitoringEnv}
+import gcp4zio.monitoring.Monitoring
 import zio.ZIO
 import zio.test.Assertion.{containsString, equalTo}
 import zio.test._
 
 object MonitoringTestSuite {
-  val spec: Spec[MonitoringEnv, Any] =
+  val spec: Spec[Monitoring, Any] =
     suite("Monitoring APIs")(
       test("Query PubSub Subscription's number of undelivered messages Metric") {
         val currentTime = System.currentTimeMillis

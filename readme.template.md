@@ -18,11 +18,11 @@ Add the latest release as a dependency to your project
 __SBT__
 ``` scala mdoc
 libraryDependencies ++= List(
-      "com.github.tharwaninitin" %% "gcp4zio-gcs" % 1.1.0,
-      "com.github.tharwaninitin" %% "gcp4zio-dp"  % 1.1.0,
-      "com.github.tharwaninitin" %% "gcp4zio-bq"  % 1.1.0,
-      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % 1.1.0,
-      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % 1.1.0
+      "com.github.tharwaninitin" %% "gcp4zio-gcs" % @VERSION@,
+      "com.github.tharwaninitin" %% "gcp4zio-dp"  % @VERSION@,
+      "com.github.tharwaninitin" %% "gcp4zio-bq"  % @VERSION@,
+      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % @VERSION@,
+      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % @VERSION@
    )
 ```
 __Maven__
@@ -30,7 +30,7 @@ __Maven__
 <dependency>
     <groupId>com.github.tharwaninitin</groupId>
     <artifactId>gcp4zio-gcs_2.12</artifactId>
-    <version>1.1.0</version>
+    <version>@VERSION@</version>
 </dependency>
 ```
 # GCP4ZIO API's
@@ -50,7 +50,7 @@ __Maven__
 <!-- /TOC -->
 
 ## Google Cloud Storage API
-```scala
+```scala mdoc:silent
 import gcp4zio.gcs._
 
 // Copy single object from source bucket to target bucket
@@ -93,7 +93,7 @@ GCSApi.copyObjectsGCStoGCS(
 
 ## PubSub API
 ### Topic API
-```scala
+```scala mdoc:silent
 import gcp4zio.pubsub.topic._
 
 // Create PubSub Topic
@@ -103,7 +103,7 @@ PSTopic.createTopic(project = "PROJECT_ID", topic = "topicName")
 PSTopic.deleteTopic(project = "PROJECT_ID", topic = "topicName")
 ```
 ### Subscription API
-```scala
+```scala mdoc:silent
 import gcp4zio.pubsub.subscription._
 
 // Create Pull Subscription
@@ -138,7 +138,7 @@ PSSubscription.deleteSubscription(
 )
 ```
 ### Publisher API
-```scala
+```scala mdoc:silent
 import gcp4zio.pubsub.publisher._
 
 // Create encoder for sending String messages to Topic
@@ -151,7 +151,7 @@ val publishMsg = PSPublisher.produce[String]("String Message")
 publishMsg.provide(PSPublisher.live("gcsProject", "topic"))
 ```
 ### Subscriber API
-```scala
+```scala mdoc:silent
 import gcp4zio.pubsub.subscriber._
 import zio._
 

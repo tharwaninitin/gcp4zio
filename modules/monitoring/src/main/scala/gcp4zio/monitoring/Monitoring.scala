@@ -9,14 +9,8 @@ trait Monitoring {
 }
 
 object Monitoring {
-  def getMetric(
-      project: String,
-      metric: String,
-      interval: TimeInterval
-  ): ZIO[MonitoringEnv, Throwable, Iterable[TimeSeries]] =
+  def getMetric(project: String, metric: String, interval: TimeInterval): ZIO[Monitoring, Throwable, Iterable[TimeSeries]] =
     ZIO.environmentWithZIO(_.get.getMetric(project, metric, interval))
-
-  def live(path: Option[String] = None): TaskLayer[MonitoringEnv] =
-    ZLayer.fromZIO(ZIO.attempt(MonitoringClient(path)).map(client => MonitoringImpl(client)))
-
+  def live(path: Option[String] = None): TaskLayer[Monitoring] =
+    ZLayer.scoped(MonitoringClient(path).map(client => MonitoringImpl(client)))
 }

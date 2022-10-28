@@ -15,7 +15,9 @@ jobs:
 #      run: sbt bq/versionPolicyCheck
 #    - name: Run Semantic Versioning Policy Check for DP
 #      run: sbt dp/versionPolicyCheck
-    - name: Run Semantic Versioning Policy Check for PUBSUB
-      run: sbt pubsub/versionPolicyCheck
+#    - name: Run Semantic Versioning Policy Check for PUBSUB
+#      run: sbt pubsub/versionPolicyCheck
 #    - name: Run Semantic Versioning Policy Check for GCS
 #      run: sbt gcs/versionPolicyCheck
+    - name: Run Semantic Versioning Policy Check for Monitoring
+      run: sbt monitoring/versionPolicyCheck

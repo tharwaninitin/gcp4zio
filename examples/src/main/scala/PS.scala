@@ -26,7 +26,7 @@ object PS extends ZIOAppDefault {
   implicit val encoder: MessageEncoder[String] = (a: String) => Right(a.getBytes(Charset.defaultCharset()))
 
   private val produceMessages = Random.nextInt
-    .flatMap(ri => PSPublisher.produce(s"Test Message $ri"))
+    .flatMap(ri => PSPublisher.produce[String](s"Test Message $ri"))
     .tap(msgId => ZIO.logInfo(s"Message ID $msgId published"))
     .repeat(Schedule.spaced(5.seconds) && Schedule.forever)
 

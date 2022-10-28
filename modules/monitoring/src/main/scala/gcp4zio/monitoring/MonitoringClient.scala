@@ -4,7 +4,7 @@ package monitoring
 import com.google.api.gax.core.FixedCredentialsProvider
 import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
 import com.google.cloud.monitoring.v3.{MetricServiceClient, MetricServiceSettings}
-
+import zio.{RIO, Scope, ZIO}
 import java.io.FileInputStream
 
 object MonitoringClient {
@@ -17,7 +17,13 @@ object MonitoringClient {
     MetricServiceClient.create(metricServiceSettings)
   }
 
-  def apply(path: Option[String]): MetricServiceClient = {
+  /** Returns AutoCloseable MetricServiceClient wrapped in ZIO
+    * @param path
+    *   Optional path to Service Account Credentials file
+    * @return
+    *   RIO[Scope, MetricServiceClient]
+    */
+  def apply(path: Option[String]): RIO[Scope, MetricServiceClient] = ZIO.fromAutoCloseable(ZIO.attempt {
     val envPath: String = sys.env.getOrElse("GOOGLE_APPLICATION_CREDENTIALS", "NOT_SET_IN_ENV")
 
     path match {
@@ -33,5 +39,5 @@ object MonitoringClient {
           getMetricServiceClient(envPath)
         }
     }
-  }
+  })
 }

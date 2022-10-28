@@ -1,4 +1,4 @@
-## STEP 1 => Update Readme.md
+## STEP 1 => Update README.md using readme.template.md
 
 ## STEP 2 => Merge PR into main
 
