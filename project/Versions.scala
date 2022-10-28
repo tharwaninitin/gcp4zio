@@ -14,4 +14,5 @@ object Versions {
   val GcpDpVersion     = "4.1.0"
   val GcpGcsVersion    = "2.13.1"
   val GcpPubSubVersion = "1.120.22"
+  val CloudMonitorVersion = "3.6.0"
 }

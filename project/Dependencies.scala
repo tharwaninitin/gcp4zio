@@ -26,6 +26,10 @@ object Dependencies {
     "com.google.cloud" % "google-cloud-pubsub" % GcpPubSubVersion
   )
 
+  lazy val monitoringLibs = List(
+    "com.google.cloud" % "google-cloud-monitoring" % CloudMonitorVersion
+  )
+
   lazy val testLibs = List(
     "dev.zio"       %% "zio-test"        % ZioVersion,
     "dev.zio"       %% "zio-test-sbt"    % ZioVersion,
