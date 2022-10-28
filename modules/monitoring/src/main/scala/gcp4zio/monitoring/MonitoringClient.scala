@@ -9,7 +9,7 @@ import java.io.FileInputStream
 
 object MonitoringClient {
 
-  private def getMetricService(path: String): MetricServiceClient = {
+  private def getMetricServiceClient(path: String): MetricServiceClient = {
     val credentials: GoogleCredentials = ServiceAccountCredentials.fromStream(new FileInputStream(path))
     val metricServiceSettings = MetricServiceSettings.newBuilder
       .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
@@ -23,14 +23,14 @@ object MonitoringClient {
     path match {
       case Some(p) =>
         logger.info("Using GCP credentials from values passed in function")
-        getMetricService(p)
+        getMetricServiceClient(p)
       case None =>
         if (envPath == "NOT_SET_IN_ENV") {
           logger.info("Using GCP credentials from local sdk")
           MetricServiceClient.create
         } else {
           logger.info("Using GCP credentials from environment variable GOOGLE_APPLICATION_CREDENTIALS")
-          getMetricService(envPath)
+          getMetricServiceClient(envPath)
         }
     }
   }
