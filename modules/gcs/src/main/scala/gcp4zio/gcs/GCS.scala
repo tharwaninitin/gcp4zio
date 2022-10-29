@@ -116,4 +116,6 @@ object GCS {
   def listPSNotification(bucket: String): ZIO[GCS, Throwable, List[Notification]] =
     ZIO.environmentWithZIO(_.get.listPSNotification(bucket: String))
   def live(path: Option[String] = None): TaskLayer[GCS] = ZLayer.scoped(GCSClient(path).map(client => GCSImpl(client)))
+  def test(url: String = "http://0.0.0.0:8080", project: String = "testproject"): TaskLayer[GCS] =
+    ZLayer.scoped(GCSClient.testClient(url, project).map(client => GCSImpl(client)))
 }

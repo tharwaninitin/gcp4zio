@@ -24,7 +24,7 @@ object GCSTestSuite {
         val path  = Paths.get(filePathCsv)
         val opts  = List(BlobTargetOption.doesNotExist())
         val step  = GCS.putObject(gcsBucket, prefix, path, opts)
-        val error = "At least one of the pre-conditions you specified did not hold."
+        val error = "Precondition failed"
         assertZIO(step.foldZIO(ex => ZIO.succeed(ex.getMessage), _ => ZIO.fail("ok")))(equalTo(error))
       },
       test("Execute lookupObject with existing object") {

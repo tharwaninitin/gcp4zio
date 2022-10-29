@@ -2,7 +2,7 @@ package gcp4zio.gcs
 
 import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
 import com.google.cloud.storage.{Storage, StorageOptions}
-import zio.{RIO, Scope, ZIO}
+import zio.{RIO, Scope, Task, ZIO}
 import java.io.FileInputStream
 
 object GCSClient {
@@ -11,6 +11,16 @@ object GCSClient {
     val credentials: GoogleCredentials = ServiceAccountCredentials.fromStream(new FileInputStream(path))
     StorageOptions.newBuilder().setCredentials(credentials).build().getService
   }
+
+  /** @param url
+    *   Host url of mock GCS server
+    * @param project
+    *   GCP Project Id for mock GCS server
+    * @return
+    *   Task[Storage]
+    */
+  def testClient(url: String, project: String): Task[Storage] =
+    ZIO.attempt(StorageOptions.newBuilder().setProjectId(project).setHost(url).build().getService)
 
   /** Returns AutoCloseable Storage object wrapped in ZIO
     * @param path
