@@ -2,7 +2,7 @@ package gcp4zio
 package gcs
 
 import com.google.cloud.storage.Storage.{BlobListOption, BlobTargetOption, BlobWriteOption}
-import com.google.cloud.storage.{Blob, BlobId, BlobInfo, Notification, NotificationInfo, Storage}
+import com.google.cloud.storage._
 import zio._
 import zio.stream._
 import java.io.{IOException, InputStream, OutputStream}
@@ -11,11 +11,11 @@ import java.nio.file.{Files, Path, Paths}
 import scala.jdk.CollectionConverters._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-case class GCSLive(client: Storage) extends GCSApi {
+case class GCSImpl(client: Storage) extends GCS {
 
   override def listObjects(
       bucket: String,
-      prefix: Option[String],
+      prefix: scala.Option[String],
       recursive: Boolean,
       options: List[BlobListOption]
   ): Stream[Throwable, Blob] = {
@@ -90,11 +90,11 @@ case class GCSLive(client: Storage) extends GCSApi {
 
   override def copyObjectsGCStoGCS(
       srcBucket: String,
-      srcPrefix: Option[String],
+      srcPrefix: scala.Option[String],
       srcRecursive: Boolean,
       srcOptions: List[BlobListOption],
       targetBucket: String,
-      targetPrefix: Option[String],
+      targetPrefix: scala.Option[String],
       parallelism: Int
   ): Task[Unit] = listObjects(srcBucket, srcPrefix, srcRecursive, srcOptions)
     .mapZIOPar(parallelism) { blob =>
@@ -119,7 +119,7 @@ case class GCSLive(client: Storage) extends GCSApi {
       overwrite: Boolean
   ): Task[Unit] = {
     val opts = if (overwrite) List.empty else List(BlobTargetOption.doesNotExist())
-    GCSLive
+    GCSImpl
       .listLocalFsObjects(srcPath)
       .mapZIOPar(parallelism) { path =>
         val targetPath = getTargetPath(srcPath, targetPrefix, path.toString)
@@ -136,8 +136,8 @@ case class GCSLive(client: Storage) extends GCSApi {
       bucket: String,
       topic: String,
       customAttributes: Map[String, String],
-      eventType: Option[NotificationInfo.EventType],
-      objectNamePrefix: Option[String],
+      eventType: scala.Option[NotificationInfo.EventType],
+      objectNamePrefix: scala.Option[String],
       payloadFormat: NotificationInfo.PayloadFormat
   ): Task[Notification] = ZIO.attempt {
     val prefix = objectNamePrefix.getOrElse("")
@@ -174,12 +174,11 @@ case class GCSLive(client: Storage) extends GCSApi {
   }
 }
 
-object GCSLive {
+object GCSImpl {
 
-  def listLocalFsObjects(path: String): Stream[Throwable, Path] = ZStream
+  def listLocalFsObjects(path: String): TaskStream[Path] = ZStream
     .fromJavaIterator(Files.walk(Paths.get(path)).iterator())
     .filter(Files.isRegularFile(_))
 
-  def apply(path: Option[String] = None): Layer[Throwable, GCSEnv] =
-    ZLayer.fromZIO(ZIO.attempt(GCSClient(path)).map(client => GCSLive(client)))
+  def live(path: scala.Option[String] = None): TaskLayer[GCS] = ZLayer.scoped(GCSClient(path).map(client => GCSImpl(client)))
 }

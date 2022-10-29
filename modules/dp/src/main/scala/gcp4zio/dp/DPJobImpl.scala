@@ -3,11 +3,11 @@ package dp
 
 import com.google.cloud.dataproc.v1._
 import zio.Schedule.Decision
-import zio.{Duration, Schedule, Task, TaskLayer, ZIO, ZLayer}
+import zio.{Duration, Schedule, Task, ZIO}
 import scala.jdk.CollectionConverters._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-case class DPJobLive(client: JobControllerClient) extends DPJobApi[Task] {
+case class DPJobImpl(client: JobControllerClient) extends DPJob {
 
   private val recurWhile: Schedule[Any, Job, Job] = Schedule.recurWhile[Job] {
     case job if job.getStatus.getState.name() == "CANCELLED" || job.getStatus.getState.name() == "ERROR" =>
@@ -90,9 +90,4 @@ case class DPJobLive(client: JobControllerClient) extends DPJobApi[Task] {
     logger.info(s"Hive job submitted successfully with JobId ${jobResponse.getJobUuid}")
     jobResponse
   }
-}
-
-object DPJobLive {
-  def apply(endpoint: String): TaskLayer[DPJobEnv] =
-    ZLayer.scoped(ZIO.fromAutoCloseable(DPJobClient(endpoint)).map(dp => DPJobLive(dp)))
 }

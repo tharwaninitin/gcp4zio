@@ -1,13 +1,12 @@
-package gcp4zio
+package gcp4zio.dp
 
 import gcp4zio.Global._
-import gcp4zio.dp.{ClusterProps, DPApi, DPEnv}
 import zio.ZIO
 import zio.test.Assertion.equalTo
-import zio.test._
+import zio.test.{assertZIO, test, Spec}
 
 object DPCreateTestSuite {
-  val spec: Spec[TestEnvironment with DPEnv, Any] =
+  val spec: Spec[DPCluster, Any] =
     test("Execute DPCreateStep") {
       val dpProps = ClusterProps(
         bucketName = dpBucket,
@@ -15,7 +14,7 @@ object DPCreateTestSuite {
         networkTags = dpNetworkTags,
         serviceAccount = dpServiceAccount
       )
-      val step = DPApi.createDataproc(dpCluster, gcpProject, gcpRegion, dpProps)
+      val step = DPCluster.createDataproc(dpCluster, gcpProject, gcpRegion, dpProps)
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     }
 }

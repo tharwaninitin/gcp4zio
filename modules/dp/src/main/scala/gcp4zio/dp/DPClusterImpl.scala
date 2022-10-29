@@ -3,10 +3,10 @@ package dp
 
 import com.google.cloud.dataproc.v1._
 import com.google.protobuf.Duration
-import zio.{Task, TaskLayer, ZIO, ZLayer}
+import zio.{Task, ZIO}
 import scala.jdk.CollectionConverters._
 
-case class DPLive(client: ClusterControllerClient) extends DPApi[Task] {
+case class DPClusterImpl(client: ClusterControllerClient) extends DPCluster {
 
   def createDataproc(clusterName: String, project: String, region: String, props: ClusterProps): Task[Cluster] = ZIO
     .fromFutureJava {
@@ -94,8 +94,4 @@ case class DPLive(client: ClusterControllerClient) extends DPApi[Task] {
       _ => ZIO.succeed(logger.info(s"Cluster $cluster deleted successfully"))
     )
     .unit
-}
-
-object DPLive {
-  def apply(endpoint: String): TaskLayer[DPEnv] = ZLayer.scoped(ZIO.fromAutoCloseable(DPClient(endpoint)).map(dp => DPLive(dp)))
 }

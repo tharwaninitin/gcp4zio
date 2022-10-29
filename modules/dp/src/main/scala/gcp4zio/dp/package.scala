@@ -1,11 +1,9 @@
 package gcp4zio
 
-import gcp4zio.utils.ApplicationLogger
-import zio.Task
+import org.slf4j.{Logger, LoggerFactory}
 
-package object dp extends ApplicationLogger {
-  type DPEnv    = DPApi[Task]
-  type DPJobEnv = DPJobApi[Task]
+package object dp {
+  private[dp] lazy val logger: Logger = LoggerFactory.getLogger(getClass.getName)
 
   case class ClusterProps(
       bucketName: String,

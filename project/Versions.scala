@@ -10,9 +10,9 @@ object Versions {
   val ZioLogVersion = "2.1.2"
 
   val LogbackVersion      = "1.4.4"
-  val GcpBqVersion        = "2.18.0"
+  val GcpBqVersion        = "2.18.2"
   val GcpDpVersion        = "4.2.0"
   val GcpGcsVersion       = "2.14.0"
-  val GcpPubSubVersion    = "1.120.23"
+  val GcpPubSubVersion    = "1.120.24"
   val CloudMonitorVersion = "3.6.0"
 }

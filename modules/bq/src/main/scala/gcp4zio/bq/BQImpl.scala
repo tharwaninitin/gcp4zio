@@ -1,10 +1,10 @@
 package gcp4zio
 package bq
 
+import com.google.cloud.bigquery._
+import gcp4zio.bq.BQInputType.{CSV, JSON, ORC, PARQUET}
+import zio.{Task, ZIO}
 import java.util.UUID
-import com.google.cloud.bigquery.{BigQuery, CsvOptions, ExtractJobConfiguration, FieldValueList, FormatOptions, Job, JobConfiguration, JobId, JobInfo, LoadJobConfiguration, QueryJobConfiguration, Schema, StandardTableDefinition, TableId, TableResult}
-import BQInputType.{CSV, JSON, ORC, PARQUET}
-import zio.{Task, TaskLayer, ZIO, ZLayer}
 import scala.jdk.CollectionConverters._
 import scala.sys.process._
 
@@ -17,7 +17,7 @@ import scala.sys.process._
     "org.wartremover.warts.AutoUnboxing"
   )
 )
-case class BQLive(client: BigQuery) extends BQApi[Task] {
+case class BQImpl(client: BigQuery) extends BQ {
 
   private def getFormatOptions(inputType: BQInputType): FormatOptions = inputType match {
     case PARQUET => FormatOptions.parquet
@@ -113,12 +113,12 @@ case class BQLive(client: BigQuery) extends BQApi[Task] {
   override def loadPartitionedTable(
       sourcePathsPartitions: Seq[(String, String)],
       sourceFormat: BQInputType,
-      destinationProject: Option[String],
+      destinationProject: scala.Option[String],
       destinationDataset: String,
       destinationTable: String,
       writeDisposition: JobInfo.WriteDisposition,
       createDisposition: JobInfo.CreateDisposition,
-      schema: Option[Schema],
+      schema: scala.Option[Schema],
       parallelism: Int
   ): Task[Map[String, Long]] = {
     logger.info(s"No of BQ partitions: ${sourcePathsPartitions.length}")
@@ -141,12 +141,12 @@ case class BQLive(client: BigQuery) extends BQApi[Task] {
   override def loadTable(
       sourcePath: String,
       sourceFormat: BQInputType,
-      destinationProject: Option[String],
+      destinationProject: scala.Option[String],
       destinationDataset: String,
       destinationTable: String,
       writeDisposition: JobInfo.WriteDisposition,
       createDisposition: JobInfo.CreateDisposition,
-      schema: Option[Schema]
+      schema: scala.Option[Schema]
   ): Task[Map[String, Long]] = ZIO.attempt {
     val tableId = destinationProject match {
       case Some(project) => TableId.of(project, destinationDataset, destinationTable)
@@ -209,9 +209,9 @@ case class BQLive(client: BigQuery) extends BQApi[Task] {
   override def exportTable(
       sourceDataset: String,
       sourceTable: String,
-      sourceProject: Option[String],
+      sourceProject: scala.Option[String],
       destinationPath: String,
-      destinationFileName: Option[String],
+      destinationFileName: scala.Option[String],
       destinationFormat: BQInputType,
       destinationCompressionType: String = "gzip"
   ): Task[Unit] = ZIO.attempt {
@@ -268,9 +268,4 @@ case class BQLive(client: BigQuery) extends BQApi[Task] {
       )
     }
   }
-}
-
-object BQLive {
-  def apply(credentials: Option[String] = None): TaskLayer[BQEnv] =
-    ZLayer.fromZIO(ZIO.attempt(BQClient(credentials)).map(bq => BQLive(bq)))
 }

@@ -1,8 +1,7 @@
-package gcp4zio
+package gcp4zio.bq
 
 import com.google.cloud.bigquery.{LegacySQLTypeName, Schema}
-import gcp4zio.bq.Encoder
-import zio.test._
+import zio.test.{assertTrue, suite, test, Spec}
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 
@@ -38,7 +37,7 @@ object BQSchemaMappingTestSuite {
     ("is_active", LegacySQLTypeName.BOOLEAN)
   )
 
-  val spec: Spec[TestEnvironment, Any] = suite("Encoder Tests")(
+  val spec: Spec[Any, Any] = suite("Encoder Tests")(
     test("Encoder[Ratings1] should return list of field names and field types") {
       val schema: Option[Schema] = Encoder[Ratings1]
       assertTrue(schema.map(_.getFields.asScala.map(x => (x.getName, x.getType))).contains(op))

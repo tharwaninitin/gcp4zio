@@ -1,13 +1,13 @@
+import gcp4zio.Global._
+import gcp4zio.dp._
 import zio.test._
-//import gcp4zio.dp.DPLive
-//import gcp4zio.dp.DPJobLive
 
 object RunTests extends ZIOSpecDefault {
-  // private val env = DPJobLive(dpEndpoint) ++ DPLive(dpEndpoint)
+  private val env = DPJob.live(dpEndpoint) ++ DPCluster.live(dpEndpoint)
 
-  override def spec: Spec[TestEnvironment, Any] = suite("DP Apis")(
-    // DPCreateTestSuite.spec
-    // DPStepsTestSuite.spec,
-    // DPDeleteTestSuite.spec
-  ) @@ TestAspect.sequential // .provideCustomLayerShared(env.orDie)
+  override def spec: Spec[TestEnvironment, Any] = (suite("DP Apis")(
+    DPCreateTestSuite.spec,
+    DPStepsTestSuite.spec,
+    DPDeleteTestSuite.spec
+  ) @@ TestAspect.sequential).provideShared(env.orDie)
 }

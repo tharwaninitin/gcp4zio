@@ -1,12 +1,10 @@
-import gcp4zio._
+import gcp4zio.gcs.{GCSCopyTestSuite, GCSImpl, GCSTestSuite, PSNotificationTestSuite}
 import zio.test._
-import gcp4zio.gcs.GCSLive
 
 object RunTests extends ZIOSpecDefault {
-
   override def spec: Spec[TestEnvironment, Any] = (suite("GCS Apis")(
     GCSTestSuite.spec,
     GCSCopyTestSuite.spec,
     PSNotificationTestSuite.spec
-  ) @@ TestAspect.sequential).provideLayerShared(GCSLive().orDie)
+  ) @@ TestAspect.sequential).provideLayerShared(GCSImpl.live().orDie)
 }

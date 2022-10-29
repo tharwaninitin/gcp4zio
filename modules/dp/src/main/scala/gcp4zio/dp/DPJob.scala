@@ -2,10 +2,10 @@ package gcp4zio
 package dp
 
 import com.google.cloud.dataproc.v1.Job
-import zio.{RIO, ZIO}
+import zio.{RIO, Task, TaskLayer, ZIO, ZLayer}
 import java.time.Duration
 
-trait DPJobApi[F[_]] {
+trait DPJob {
   def submitSparkJob(
       args: List[String],
       mainClass: String,
@@ -14,12 +14,12 @@ trait DPJobApi[F[_]] {
       cluster: String,
       project: String,
       region: String
-  ): F[Job]
-  def submitHiveJob(query: String, cluster: String, project: String, region: String): F[Job]
-  def trackJobProgress(project: String, region: String, job: Job, interval: Duration): F[Unit]
+  ): Task[Job]
+  def submitHiveJob(query: String, cluster: String, project: String, region: String): Task[Job]
+  def trackJobProgress(project: String, region: String, job: Job, interval: Duration): Task[Unit]
 }
 
-object DPJobApi {
+object DPJob {
   def submitSparkJob(
       args: List[String],
       mainClass: String,
@@ -28,7 +28,7 @@ object DPJobApi {
       cluster: String,
       project: String,
       region: String
-  ): RIO[DPJobEnv, Job] =
+  ): RIO[DPJob, Job] =
     ZIO.environmentWithZIO(_.get.submitSparkJob(args, mainClass, libs, conf, cluster, project, region))
   def executeSparkJob(
       args: List[String],
@@ -39,18 +39,19 @@ object DPJobApi {
       project: String,
       region: String,
       trackingInterval: Duration = Duration.ofSeconds(10)
-  ): RIO[DPJobEnv, Job] =
+  ): RIO[DPJob, Job] =
     for {
-      job <- ZIO.environmentWithZIO[DPJobEnv](_.get.submitSparkJob(args, mainClass, libs, conf, cluster, project, region))
-      _   <- ZIO.environmentWithZIO[DPJobEnv](_.get.trackJobProgress(project, region, job, trackingInterval))
+      job <- ZIO.environmentWithZIO[DPJob](_.get.submitSparkJob(args, mainClass, libs, conf, cluster, project, region))
+      _   <- ZIO.environmentWithZIO[DPJob](_.get.trackJobProgress(project, region, job, trackingInterval))
     } yield job
-  def submitHiveJob(query: String, clusterName: String, project: String, region: String): RIO[DPJobEnv, Job] =
+  def submitHiveJob(query: String, clusterName: String, project: String, region: String): RIO[DPJob, Job] =
     ZIO.environmentWithZIO(_.get.submitHiveJob(query, clusterName, project, region))
   def trackJobProgress(
       project: String,
       region: String,
       job: Job,
       interval: Duration = Duration.ofSeconds(10)
-  ): RIO[DPJobEnv, Unit] =
+  ): RIO[DPJob, Unit] =
     ZIO.environmentWithZIO(_.get.trackJobProgress(project, region, job, interval))
+  def live(endpoint: String): TaskLayer[DPJob] = ZLayer.scoped(DPJobClient(endpoint).map(dp => DPJobImpl(dp)))
 }

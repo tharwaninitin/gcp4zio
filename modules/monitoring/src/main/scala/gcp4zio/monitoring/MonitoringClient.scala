@@ -17,7 +17,7 @@ object MonitoringClient {
     MetricServiceClient.create(metricServiceSettings)
   }
 
-  /** Returns AutoCloseable MetricServiceClient wrapped in ZIO
+  /** Returns AutoCloseable MetricServiceClient object wrapped in ZIO
     * @param path
     *   Optional path to Service Account Credentials file
     * @return

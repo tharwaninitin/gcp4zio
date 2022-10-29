@@ -2,17 +2,17 @@ package gcp4zio
 package bq
 
 import com.google.cloud.bigquery.{FieldValueList, JobInfo, Schema}
-import zio.ZIO
+import zio.{Task, TaskLayer, ZIO, ZLayer}
 
-trait BQApi[F[_]] {
-  def executeQuery(query: String): F[Unit]
-  def getData(query: String): F[Iterable[FieldValueList]]
+trait BQ {
+  def executeQuery(query: String): Task[Unit]
+  def getData(query: String): Task[Iterable[FieldValueList]]
   def loadTableFromLocalFile(
       sourceLocations: Either[String, Seq[(String, String)]],
       sourceFormat: BQInputType,
       destinationDataset: String,
       destinationTable: String
-  ): F[Unit]
+  ): Task[Unit]
   def loadTable(
       sourcePath: String,
       sourceFormat: BQInputType,
@@ -22,7 +22,7 @@ trait BQApi[F[_]] {
       writeDisposition: JobInfo.WriteDisposition,
       createDisposition: JobInfo.CreateDisposition,
       schema: Option[Schema] = None
-  ): F[Map[String, Long]]
+  ): Task[Map[String, Long]]
   def loadPartitionedTable(
       sourcePathsPartitions: Seq[(String, String)],
       sourceFormat: BQInputType,
@@ -33,7 +33,7 @@ trait BQApi[F[_]] {
       createDisposition: JobInfo.CreateDisposition,
       schema: Option[Schema],
       parallelism: Int
-  ): F[Map[String, Long]]
+  ): Task[Map[String, Long]]
   def exportTable(
       sourceDataset: String,
       sourceTable: String,
@@ -42,18 +42,18 @@ trait BQApi[F[_]] {
       destinationFileName: Option[String],
       destinationFormat: BQInputType,
       destinationCompressionType: String = "gzip"
-  ): F[Unit]
+  ): Task[Unit]
 }
 
-object BQApi {
-  def executeQuery(query: String): ZIO[BQEnv, Throwable, Unit]                = ZIO.environmentWithZIO(_.get.executeQuery(query))
-  def getData(query: String): ZIO[BQEnv, Throwable, Iterable[FieldValueList]] = ZIO.environmentWithZIO(_.get.getData(query))
+object BQ {
+  def executeQuery(query: String): ZIO[BQ, Throwable, Unit]                = ZIO.environmentWithZIO(_.get.executeQuery(query))
+  def getData(query: String): ZIO[BQ, Throwable, Iterable[FieldValueList]] = ZIO.environmentWithZIO(_.get.getData(query))
   def loadTableFromLocalFile(
       sourceLocations: Either[String, Seq[(String, String)]],
       sourceFormat: BQInputType,
       destinationDataset: String,
       destinationTable: String
-  ): ZIO[BQEnv, Throwable, Unit] =
+  ): ZIO[BQ, Throwable, Unit] =
     ZIO.environmentWithZIO(
       _.get.loadTableFromLocalFile(
         sourceLocations,
@@ -71,7 +71,7 @@ object BQApi {
       writeDisposition: JobInfo.WriteDisposition = JobInfo.WriteDisposition.WRITE_TRUNCATE,
       createDisposition: JobInfo.CreateDisposition = JobInfo.CreateDisposition.CREATE_NEVER,
       schema: Option[Schema] = None
-  ): ZIO[BQEnv, Throwable, Map[String, Long]] =
+  ): ZIO[BQ, Throwable, Map[String, Long]] =
     ZIO.environmentWithZIO(
       _.get.loadTable(
         sourcePath,
@@ -94,7 +94,7 @@ object BQApi {
       createDisposition: JobInfo.CreateDisposition,
       schema: Option[Schema],
       parallelism: Int
-  ): ZIO[BQEnv, Throwable, Map[String, Long]] =
+  ): ZIO[BQ, Throwable, Map[String, Long]] =
     ZIO.environmentWithZIO(
       _.get.loadPartitionedTable(
         sourcePathsPartitions,
@@ -116,7 +116,7 @@ object BQApi {
       destinationFileName: Option[String],
       destinationFormat: BQInputType,
       destinationCompressionType: String = "gzip"
-  ): ZIO[BQEnv, Throwable, Unit] =
+  ): ZIO[BQ, Throwable, Unit] =
     ZIO.environmentWithZIO(
       _.get.exportTable(
         sourceDataset,
@@ -128,4 +128,5 @@ object BQApi {
         destinationCompressionType
       )
     )
+  def live(credentials: Option[String] = None): TaskLayer[BQ] = ZLayer.fromZIO(BQClient(credentials).map(bq => BQImpl(bq)))
 }

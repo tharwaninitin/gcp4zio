@@ -1,10 +1,9 @@
 package gcp4zio
 
-import gcp4zio.utils.ApplicationLogger
-import zio.Task
+import org.slf4j.{Logger, LoggerFactory}
 
-package object bq extends ApplicationLogger {
-  type BQEnv = BQApi[Task]
+package object bq {
+  private[bq] lazy val logger: Logger = LoggerFactory.getLogger(getClass.getName)
 
   case class BQLoadException(msg: String) extends RuntimeException(msg)
 

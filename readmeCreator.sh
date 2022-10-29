@@ -17,12 +17,12 @@ echo "Downloading $bq"
 echo "Downloading $dp"
 echo "Downloading $pubsub"
 
-cp=$(coursier fetch -p $gcs $bq $dp $pubsub)
+cp=$(coursier fetch -p "$gcs" "$bq" "$dp" "$pubsub")
 
 echo "Done downloading all above libraries"
 
 coursier launch org.scalameta:mdoc_2.12:2.3.6 -- \
---site.VERSION $1 \
+--site.VERSION "$1" \
 --in readme.template.md \
 --out README.md \
---classpath $cp
+--classpath "$cp"
