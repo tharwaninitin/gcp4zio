@@ -17,7 +17,7 @@ object GCSTestSuite {
     suite("GCS Apis")(
       test("Execute putObject") {
         val path = Paths.get(filePathCsv)
-        val step = GCS.putObject(gcsBucket, prefix, path, List.empty)
+        val step = GCS.putObject(gcsBucket, prefix, path)
         assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       },
       test("Execute putObject with Overwrite Error") {
@@ -34,6 +34,11 @@ object GCSTestSuite {
       test("Execute lookupObject with non existing object") {
         val step = GCS.lookupObject(gcsBucket, UUID.randomUUID().toString)
         assertZIO(step.foldZIO(ex => ZIO.fail(ex.toString), op => ZIO.succeed(op.toString)))(equalTo("false"))
+      },
+      test("Execute getObject") {
+        val localPath = Paths.get(filePathCsv)
+        val step      = GCS.getObject(gcsBucket, prefix, localPath)
+        assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       },
       test("Execute(streaming) getObject") {
         val step = GCS

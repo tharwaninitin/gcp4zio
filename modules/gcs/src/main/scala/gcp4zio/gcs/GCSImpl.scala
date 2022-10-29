@@ -175,10 +175,7 @@ case class GCSImpl(client: Storage) extends GCS {
 }
 
 object GCSImpl {
-
   def listLocalFsObjects(path: String): TaskStream[Path] = ZStream
     .fromJavaIterator(Files.walk(Paths.get(path)).iterator())
     .filter(Files.isRegularFile(_))
-
-  def live(path: scala.Option[String] = None): TaskLayer[GCS] = ZLayer.scoped(GCSClient(path).map(client => GCSImpl(client)))
 }

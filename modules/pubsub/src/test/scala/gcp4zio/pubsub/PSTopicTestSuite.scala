@@ -1,17 +1,16 @@
-package gcp4zio
+package gcp4zio.pubsub
 
 import gcp4zio.Global._
-import gcp4zio.pubsub.PSTopicEnv
 import gcp4zio.pubsub.topic.PSTopic
 import zio.ZIO
 import zio.test.Assertion.containsString
-import zio.test._
+import zio.test.{assertZIO, suite, test, Spec, TestAspect}
 
 object PSTopicTestSuite {
-  val spec: Spec[PSTopicEnv, Any] =
+  val spec: Spec[PSTopic, Any] =
     suite("PubSub Topic APIs")(
       test("Create Duplicate Topic within the project") {
-        val step  = PSTopic.createTopic(gcsProject, topic)
+        val step  = PSTopic.createTopic(gcsProject, topic1)
         val error = "ALREADY_EXISTS"
         assertZIO(step.foldZIO(ex => ZIO.succeed(ex.getMessage), _ => ZIO.fail("ok")))(containsString(error))
       },

@@ -1,7 +1,6 @@
 import com.google.cloud.dataproc.v1.Job
-import gcp4zio.dp.{DPJobApi, DPJobLive}
-import gcp4zio.gcs.{GCSApi, GCSEnv, GCSLive}
-import gcp4zio.utils.ApplicationLogger
+import gcp4zio.dp.DPJob
+import gcp4zio.gcs.GCS
 import zio.stream.ZPipeline
 import zio.{Task, ZIO, ZIOAppDefault}
 import java.net.URI
@@ -19,15 +18,15 @@ object DPGCS extends ZIOAppDefault with ApplicationLogger {
   val dpCluster: String  = sys.env("DP_CLUSTER")
   val dpEndpoint: String = sys.env("DP_ENDPOINT")
 
-  def printGcsLogs(response: Job): ZIO[GCSEnv, Throwable, Unit] = {
+  def printGcsLogs(response: Job): ZIO[GCS, Throwable, Unit] = {
     val uri    = new URI(response.getDriverOutputResourceUri)
     val bucket = uri.getHost
     val path   = uri.getPath.substring(1)
-    GCSApi
+    GCS
       .listObjects(bucket, Some(path), recursive = false, List.empty)
       .flatMap { blob =>
         logger.info(s"Reading logs from gs://$bucket/${blob.getName} with size ${blob.getSize} bytes")
-        GCSApi
+        GCS
           .getObject(bucket, blob.getName, 4096)
           .via(ZPipeline.utf8Decode >>> ZPipeline.splitLines)
           .tap(line => ZIO.succeed(logger.info(line)))
@@ -40,15 +39,15 @@ object DPGCS extends ZIOAppDefault with ApplicationLogger {
 
   private val mainClass = "org.apache.spark.examples.SparkPi"
 
-  private val program1 = DPJobApi
+  private val program1 = DPJob
     .executeSparkJob(List("1000"), mainClass, libs, conf, dpCluster, gcpProject, gcpRegion)
     .flatMap(printGcsLogs)
 
   private val program2 = for {
-    job <- DPJobApi.submitHiveJob("SELE 1 AS ONE", dpCluster, gcpProject, gcpRegion)
-    _   <- DPJobApi.trackJobProgress(gcpProject, gcpRegion, job).tapError(_ => printGcsLogs(job))
+    job <- DPJob.submitHiveJob("SELE 1 AS ONE", dpCluster, gcpProject, gcpRegion)
+    _   <- DPJob.trackJobProgress(gcpProject, gcpRegion, job).tapError(_ => printGcsLogs(job))
     _   <- printGcsLogs(job)
   } yield ()
 
-  val run: Task[Unit] = (program1 *> program2).provide(DPJobLive(dpEndpoint) ++ GCSLive())
+  val run: Task[Unit] = (program1 *> program2).provide(DPJob.live(dpEndpoint) ++ GCS.live())
 }

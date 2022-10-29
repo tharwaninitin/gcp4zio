@@ -1,10 +1,9 @@
 package gcp4zio.pubsub.topic
 
 import com.google.pubsub.v1.Topic
-import gcp4zio.pubsub.PSTopicEnv
 import zio._
 
-trait PSTopic[F[_]] {
+trait PSTopic {
 
   /** @param project
     *   GCP Project ID
@@ -12,7 +11,7 @@ trait PSTopic[F[_]] {
     *   The name of the topic to be created
     * @return
     */
-  def createTopic(project: String, topic: String): F[Topic]
+  def createTopic(project: String, topic: String): Task[Topic]
 
   /** @param project
     *   GCP Project ID
@@ -20,7 +19,7 @@ trait PSTopic[F[_]] {
     *   The name of the topic to be created
     * @return
     */
-  def deleteTopic(project: String, topic: String): F[Unit]
+  def deleteTopic(project: String, topic: String): Task[Unit]
 }
 
 object PSTopic {
@@ -31,7 +30,7 @@ object PSTopic {
     *   The name of the topic to be created
     * @return
     */
-  def createTopic(project: String, topic: String): ZIO[PSTopicEnv, Throwable, Topic] =
+  def createTopic(project: String, topic: String): ZIO[PSTopic, Throwable, Topic] =
     ZIO.environmentWithZIO(_.get.createTopic(project, topic))
 
   /** @param project
@@ -40,22 +39,21 @@ object PSTopic {
     *   The name of the topic to be created
     * @return
     */
-  def deleteTopic(project: String, topic: String): ZIO[PSTopicEnv, Throwable, Unit] =
+  def deleteTopic(project: String, topic: String): ZIO[PSTopic, Throwable, Unit] =
     ZIO.environmentWithZIO(_.get.deleteTopic(project, topic))
 
   /** @param path
     *   Optional path to google service account credential file
     * @return
-    *   PSTopicEnv
+    *   PSTopic
     */
-  def live(path: Option[String] = None): TaskLayer[PSTopicEnv] =
+  def live(path: Option[String] = None): TaskLayer[PSTopic] =
     ZLayer.scoped(PSTopicClient(path).map(client => PSTopicImpl(client)))
 
   /** Test layer
     *
     * @return
-    *   PSTopicEnv
+    *   PSTopic
     */
-  val test: TaskLayer[PSTopicEnv] =
-    ZLayer.scoped(PSTopicClient.testClient.map(client => PSTopicImpl(client)))
+  val test: TaskLayer[PSTopic] = ZLayer.scoped(PSTopicClient.testClient.map(client => PSTopicImpl(client)))
 }

@@ -1,4 +1,4 @@
-import gcp4zio.gcs.{GCSCopyTestSuite, GCSImpl, GCSTestSuite, PSNotificationTestSuite}
+import gcp4zio.gcs.{GCS, GCSCopyTestSuite, GCSTestSuite, PSNotificationTestSuite}
 import zio.test._
 
 object RunTests extends ZIOSpecDefault {
@@ -6,5 +6,5 @@ object RunTests extends ZIOSpecDefault {
     GCSTestSuite.spec,
     GCSCopyTestSuite.spec,
     PSNotificationTestSuite.spec
-  ) @@ TestAspect.sequential).provideLayerShared(GCSImpl.live().orDie)
+  ) @@ TestAspect.sequential).provideLayerShared(GCS.live().orDie)
 }

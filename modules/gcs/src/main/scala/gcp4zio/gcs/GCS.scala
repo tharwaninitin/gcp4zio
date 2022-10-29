@@ -50,7 +50,12 @@ object GCS {
     ZIO.environmentWithZIO(_.get.getObject(bucket, prefix, file))
   def getObject(bucket: String, prefix: String, chunkSize: Int): GCSStreamWithEnv =
     ZStream.environmentWithStream(_.get.getObject(bucket, prefix, chunkSize))
-  def putObject(bucket: String, prefix: String, file: Path, options: List[BlobTargetOption]): ZIO[GCS, Throwable, Blob] =
+  def putObject(
+      bucket: String,
+      prefix: String,
+      file: Path,
+      options: List[BlobTargetOption] = List.empty
+  ): ZIO[GCS, Throwable, Blob] =
     ZIO.environmentWithZIO(_.get.putObject(bucket, prefix, file, options))
   def putObject(bucket: String, prefix: String, options: List[BlobWriteOption]): GCSSinkWithEnv =
     ZSink.environmentWithSink(_.get.putObject(bucket, prefix, options))
@@ -110,4 +115,5 @@ object GCS {
     ZIO.environmentWithZIO(_.get.deletePSNotification(bucket, prefix))
   def listPSNotification(bucket: String): ZIO[GCS, Throwable, List[Notification]] =
     ZIO.environmentWithZIO(_.get.listPSNotification(bucket: String))
+  def live(path: Option[String] = None): TaskLayer[GCS] = ZLayer.scoped(GCSClient(path).map(client => GCSImpl(client)))
 }

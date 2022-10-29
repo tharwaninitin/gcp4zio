@@ -5,7 +5,7 @@ import com.google.pubsub.v1.{Topic, TopicName}
 import zio._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-case class PSTopicImpl(client: TopicAdminClient) extends PSTopic[Task] {
+case class PSTopicImpl(client: TopicAdminClient) extends PSTopic {
 
   override def createTopic(projectId: String, topicId: String): Task[Topic] = ZIO.attempt {
     val topicName = TopicName.of(projectId, topicId)

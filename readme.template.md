@@ -1,7 +1,8 @@
 # Gcp4zio
 [![License](http://img.shields.io/:license-Apache%202-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 [![Tests](https://github.com/tharwaninitin/gcp4zio/actions/workflows/ci.yml/badge.svg)](https://github.com/tharwaninitin/gcp4zio/actions/workflows/ci.yml)
-[![Semantic Versioning Policy Check](https://github.com/tharwaninitin/gcp4zio/actions/workflows/semver.yml/badge.svg)](https://github.com/tharwaninitin/gcp4zio/actions/workflows/semver.yml)
+
+[//]: # ([![Semantic Versioning Policy Check]&#40;https://github.com/tharwaninitin/gcp4zio/actions/workflows/semver.yml/badge.svg&#41;]&#40;https://github.com/tharwaninitin/gcp4zio/actions/workflows/semver.yml&#41;)
 
 **Gcp4zio** is simple Scala interface to Google Cloud API based on ZIO.
 
@@ -37,6 +38,9 @@ __Maven__
 <!-- TOC -->
 - [GCP4ZIO API's](#gcp4zio-apis)
   - [Google Cloud Storage](#google-cloud-storage-api)
+    - [CRUD Operations](#crud-operations)
+    - [CRUD Operations (Streaming)](#crud-operations-streaming)
+    - [Copy Objects from GCS to GCS](#copy-objects-from-gcs-to-gcs)
   - [Dataproc](#dataproc-api)
     - [Dataproc Cluster](#dataproc-cluster-api)
     - [Dataproc Job](#dataproc-job-api)
@@ -45,49 +49,70 @@ __Maven__
     - [Topic](#topic-api)
     - [Subscription](#subscription-api)
     - [Publisher](#publisher-api)
-    - [Subscriber](#subscriber-api)
+    - [Subscriber (Streaming)](#subscriber-api)
   - [Monitoring](#monitoring-api)
 <!-- /TOC -->
 
 ## Google Cloud Storage API
+### CRUD Operations
+```scala
+import gcp4zio.gcs._
+import java.nio.file.Paths
+
+// Upload single object from local to provided bucket at provided prefix
+val localPath1 = Paths.get("/local/path/to/file1.csv")
+GCS.putObject("targetBucket", "temp/gcs/prefix/file1.csv", localPath1)
+
+// Download single object from bucket at provided prefix to local
+val localPath2 = Paths.get("/local/path/to/file2.csv")
+GCS.getObject("srcBucket", "temp/gcs/prefix/file1.csv", localPath2)
+
+// Delete single object from bucket at provided prefix
+GCS.deleteObject("gcsBucket", "temp/gcs/prefix/file1.csv")
+```
+### CRUD Operations (Streaming)
+```scala mdoc:silent
+// TODO
+```
+### Copy Objects from GCS to GCS
 ```scala mdoc:silent
 import gcp4zio.gcs._
 
 // Copy single object from source bucket to target bucket
 GCSApi.copyObjectsGCStoGCS(
-  srcBucket = "src_gcs_bucket",
-  srcPrefix = Some("temp/test/ratings.csv"),
-  targetBucket = "tgt_gcs_bucket",
-  targetPrefix = Some("temp2/test/ratings.csv")
+  srcBucket = "srcBucket",
+  srcPrefix = Some("temp/gcs/prefix/file1.csv"),
+  targetBucket = "targetBucket",
+  targetPrefix = Some("temp2/gcs/prefix/file1.csv")
 )
 
 // Copy all objects from source bucket to target bucket
 GCSApi.copyObjectsGCStoGCS(
-  srcBucket = "src_gcs_bucket",
-  targetBucket = "tgt_gcs_bucket"
+  srcBucket = "srcBucket",
+  targetBucket = "targetBucket"
 )
 
 // Copy all objects from source bucket with prefix to target bucket
 GCSApi.copyObjectsGCStoGCS(
-  srcBucket = "src_gcs_bucket",
-  srcPrefix = Some("temp/test"),
-  targetBucket = "tgt_gcs_bucket"
+  srcBucket = "srcBucket",
+  srcPrefix = Some("temp/gcs/prefix"),
+  targetBucket = "targetBucket"
 )
 ```  
 
 ## Dataproc API
 ### Dataproc Cluster API
-```scala
+```scala mdoc:silent
 //TODO
 ```  
 
 ### Dataproc Job API
-```scala
+```scala mdoc:silent
 //TODO
 ```  
 
 ## Bigquery API
-```scala
+```scala mdoc:silent
 //TODO
 ```  
 
@@ -97,10 +122,10 @@ GCSApi.copyObjectsGCStoGCS(
 import gcp4zio.pubsub.topic._
 
 // Create PubSub Topic
-PSTopic.createTopic(project = "PROJECT_ID", topic = "topicName")
+PSTopic.createTopic(project = "gcsProjectId", topic = "topicName")
 
 // Delete PubSub Topic
-PSTopic.deleteTopic(project = "PROJECT_ID", topic = "topicName")
+PSTopic.deleteTopic(project = "gcsProjectId", topic = "topicName")
 ```
 ### Subscription API
 ```scala mdoc:silent
@@ -108,7 +133,7 @@ import gcp4zio.pubsub.subscription._
 
 // Create Pull Subscription
 PSSubscription.createPullSubscription(
-    project = "PROJECT_ID", 
+    project = "gcsProjectId", 
     subscription = "subName", 
     topic = "topicName",
     ackDeadlineSeconds = 20 // default 10 seconds
@@ -116,7 +141,7 @@ PSSubscription.createPullSubscription(
 
 // Create Push Subscription
 PSSubscription.createPushSubscription(
-    project = "PROJECT_ID",
+    project = "gcsProjectId",
     subscription = "subName",
     topic = "topicName",
     ackDeadlineSeconds = 20, // default 10 seconds
@@ -125,7 +150,7 @@ PSSubscription.createPushSubscription(
 
 // Create Bigquery Subscription
 PSSubscription.createBQSubscription(
-    project = "PROJECT_ID",
+    project = "gcsProjectId",
     subscription = "subName",
     topic = "topicName",
     bqTableId = "projectId:datasetId.tableId"
@@ -133,7 +158,7 @@ PSSubscription.createBQSubscription(
 
 // Delete Subscription
 PSSubscription.deleteSubscription(
-  project = "PROJECT_ID",
+  project = "gcsProjectId",
   subscription = "subName"
 )
 ```
@@ -148,15 +173,15 @@ implicit val encoder: MessageEncoder[String] = (a: String) => Right(a.getBytes(j
 val publishMsg = PSPublisher.produce[String]("String Message")
 
 // Provide Publisher layer
-publishMsg.provide(PSPublisher.live("gcsProject", "topic"))
+publishMsg.provide(PSPublisher.live("gcsProjectId", "topic"))
 ```
 ### Subscriber API
-```scala mdoc:silent
+```scala
 import gcp4zio.pubsub.subscriber._
 import zio._
 
 // Create stream to consume messages from the subscription
-val subscriberStream = PSSubscriber.subscribe
+val subscriberStream = PSSubscriber.subscribe("gcsProjectId", "subscription")
 
 // Print first 10 messages from stream to console
 val task = subscriberStream.mapZIO { msg =>
@@ -164,9 +189,6 @@ val task = subscriberStream.mapZIO { msg =>
     }
     .take(10)
     .runDrain
-
-// Provide Publisher layer
-task.provideSome[Scope](PSSubscriber.live("gcsProject", "subscription"))
 ```
 Check [this](examples/src/main/scala/PS.scala) example to use PubSub APIs   
   
