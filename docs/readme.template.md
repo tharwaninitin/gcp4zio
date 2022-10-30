@@ -19,11 +19,11 @@ Add the latest release as a dependency to your project
 __SBT__
 ``` scala mdoc
 libraryDependencies ++= List(
-      "com.github.tharwaninitin" %% "gcp4zio-gcs" % @VERSION@,
-      "com.github.tharwaninitin" %% "gcp4zio-dp"  % @VERSION@,
-      "com.github.tharwaninitin" %% "gcp4zio-bq"  % @VERSION@,
-      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % @VERSION@,
-      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % @VERSION@
+      "com.github.tharwaninitin" %% "gcp4zio-gcs" % "@VERSION@",
+      "com.github.tharwaninitin" %% "gcp4zio-dp"  % "@VERSION@",
+      "com.github.tharwaninitin" %% "gcp4zio-bq"  % "@VERSION@",
+      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % "@VERSION@",
+      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % "@VERSION@"
    )
 ```
 __Maven__
@@ -35,6 +35,10 @@ __Maven__
 </dependency>
 ```
 # GCP4ZIO API's
+```shell
+# To run all these examples set the GOOGLE_APPLICATION_CREDENTIALS environment variable to the location of the service account json key. 
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+```
 <!-- TOC -->
 - [GCP4ZIO API's](#gcp4zio-apis)
   - [Google Cloud Storage](#google-cloud-storage-api)
@@ -42,14 +46,14 @@ __Maven__
     - [CRUD Operations (Streaming)](#crud-operations-streaming)
     - [Copy Objects from GCS to GCS](#copy-objects-from-gcs-to-gcs)
   - [Dataproc](#dataproc-api)
-    - [Dataproc Cluster](#dataproc-cluster-api)
-    - [Dataproc Job](#dataproc-job-api)
+    - [Dataproc Cluster](#dataproc-cluster)
+    - [Dataproc Job](#dataproc-job)
   - [Bigquery](#bigquery-api)
   - [PubSub](#pubsub-api)
-    - [Topic](#topic-api)
-    - [Subscription](#subscription-api)
-    - [Publisher](#publisher-api)
-    - [Subscriber (Streaming)](#subscriber-api)
+    - [Topic](#topic)
+    - [Subscription](#subscription)
+    - [Publisher](#publisher)
+    - [Subscriber (Streaming)](#subscriber)
   - [Monitoring](#monitoring-api)
 <!-- /TOC -->
 
@@ -72,7 +76,15 @@ GCS.deleteObject("gcsBucket", "temp/gcs/prefix/file1.csv")
 ```
 ### CRUD Operations (Streaming)
 ```scala mdoc:silent
-// TODO
+import gcp4zio.gcs._
+import com.google.cloud.storage.Storage.BlobWriteOption
+
+val src = GCS.getObject("gcsBucket", "temp/gcs/prefix/file1.csv", 4096)
+
+val opts = List(BlobWriteOption.doesNotExist())
+val sink = GCS.putObject("gcsBucket", "temp/test/ratings2.csv", opts)
+
+src.run(sink)
 ```
 ### Copy Objects from GCS to GCS
 ```scala mdoc:silent
@@ -101,23 +113,45 @@ GCS.copyObjectsGCStoGCS(
 ```  
 
 ## Dataproc API
-### Dataproc Cluster API
+### Dataproc Cluster
 ```scala mdoc:silent
-//TODO
+import gcp4zio.dp._
+
+// Create Dataproc Cluster Properties
+val dpProps = ClusterProps(bucketName = "dpLogBucket")
+// Create Dataproc Cluster
+DPCluster.createDataproc("dpCluster", "gcpProject", "gcpRegion", dpProps)
+
+// Delete Dataproc Cluster
+DPCluster.deleteDataproc("dpCluster", "gcpProject", "gcpRegion")
 ```  
 
-### Dataproc Job API
+### Dataproc Job
 ```scala mdoc:silent
-//TODO
+import gcp4zio.dp._
+
+val libs = List("file:///usr/lib/spark/examples/jars/spark-examples.jar")
+val conf = Map("spark.executor.memory" -> "1g", "spark.driver.memory" -> "1g")
+val mainClass = "org.apache.spark.examples.SparkPi"
+
+val job = DPJob.executeSparkJob(List("1000"), "mainClass", libs, conf, "dpCluster", "gcpProject", "gcpRegion")
+
+job.provide(DPJob.live("dpEndpoint"))
 ```  
 
 ## Bigquery API
 ```scala mdoc:silent
-//TODO
+import gcp4zio.bq._
+import gcp4zio.bq.BQInputType.PARQUET
+
+// Load PARQUET file into Bigquery
+val step = BQ.loadTable("inputFilePathParquet", PARQUET, Some("gcpProject"), "outputDataset", "outputTable")
+
+step.provide(BQ.live())
 ```  
 
 ## PubSub API
-### Topic API
+### Topic
 ```scala mdoc:silent
 import gcp4zio.pubsub.topic._
 
@@ -127,7 +161,7 @@ PSTopic.createTopic(project = "gcsProjectId", topic = "topicName")
 // Delete PubSub Topic
 PSTopic.deleteTopic(project = "gcsProjectId", topic = "topicName")
 ```
-### Subscription API
+### Subscription
 ```scala mdoc:silent
 import gcp4zio.pubsub.subscription._
 
@@ -162,7 +196,7 @@ PSSubscription.deleteSubscription(
   subscription = "subName"
 )
 ```
-### Publisher API
+### Publisher
 ```scala mdoc:silent
 import gcp4zio.pubsub.publisher._
 
@@ -175,7 +209,7 @@ val publishMsg = PSPublisher.produce[String]("String Message")
 // Provide Publisher layer
 publishMsg.provide(PSPublisher.live("gcsProjectId", "topic"))
 ```
-### Subscriber API
+### Subscriber
 ```scala mdoc:silent
 import gcp4zio.pubsub.subscriber._
 import zio._
@@ -199,7 +233,7 @@ import com.google.monitoring.v3.TimeInterval
 
 // Get GCS Cloud Monitoring metric data (time-series data)
 Monitoring.getMetric(
-  project = "PROJECT_ID", 
+  project = "gcsProjectId", 
   metric = "compute.googleapis.com/instance/cpu/usage_time", 
   interval = TimeInterval.getDefaultInstance  // Provide TimeInterval with start and end time
 )

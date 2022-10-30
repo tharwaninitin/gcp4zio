@@ -5,7 +5,7 @@ import Versions._
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val commonSettings = Seq(
-  scalaVersion               := Scala213,
+  scalaVersion               := Scala212,
   crossScalaVersions         := AllScalaVersions,
   dependencyUpdatesFailBuild := true,
   dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang"),
