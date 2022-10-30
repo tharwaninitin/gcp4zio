@@ -1,6 +1,6 @@
-import gcp4zio._
 import gcp4zio.pubsub.subscription.PSSubscription
 import gcp4zio.pubsub.topic.PSTopic
+import gcp4zio.pubsub.{PSSubTestSuite, PSTopicCreateTestSuite, PSTopicDeleteTestSuite, PSTopicTestSuite}
 import zio.test._
 
 object RunTests extends ZIOSpecDefault {

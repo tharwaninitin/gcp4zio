@@ -9,30 +9,29 @@ import java.util.concurrent.TimeUnit
 
 object PSPublisherClient {
 
-  def apply(project: String, topic: String, config: Config): ZIO[Scope, Throwable, Publisher] =
-    ZIO.acquireRelease(ZIO.attempt {
-      val publisherBuilder = Publisher
-        .newBuilder(ProjectTopicName.of(project, topic))
-        .setBatchingSettings(
-          BatchingSettings
-            .newBuilder()
-            .setElementCountThreshold(config.batchSize)
-            .setRequestByteThreshold(
-              config.requestByteThreshold.getOrElse[Long](config.batchSize * config.averageMessageSize * 2L)
-            )
-            .setDelayThreshold(Duration.ofMillis(config.delayThreshold.toMillis))
-            .build()
-        )
+  def apply(project: String, topic: String, config: Config): ZIO[Scope, Throwable, Publisher] = ZIO.acquireRelease(ZIO.attempt {
+    val publisherBuilder = Publisher
+      .newBuilder(ProjectTopicName.of(project, topic))
+      .setBatchingSettings(
+        BatchingSettings
+          .newBuilder()
+          .setElementCountThreshold(config.batchSize)
+          .setRequestByteThreshold(
+            config.requestByteThreshold.getOrElse[Long](config.batchSize * config.averageMessageSize * 2L)
+          )
+          .setDelayThreshold(Duration.ofMillis(config.delayThreshold.toMillis))
+          .build()
+      )
 
-      config.customizePublisher
-        .map(f => f(publisherBuilder))
-        .getOrElse(publisherBuilder)
-        .build()
+    config.customizePublisher
+      .map(f => f(publisherBuilder))
+      .getOrElse(publisherBuilder)
+      .build()
 
-    }) { publisher =>
-      (for {
-         _ <- ZIO.attempt(publisher.shutdown())
-         _ <- ZIO.attempt(publisher.awaitTermination(config.awaitTerminatePeriod.toMillis, TimeUnit.MILLISECONDS))
-       } yield ()).ignore
-    }
+  }) { publisher =>
+    (for {
+       _ <- ZIO.attempt(publisher.shutdown())
+       _ <- ZIO.attempt(publisher.awaitTermination(config.awaitTerminatePeriod.toMillis, TimeUnit.MILLISECONDS))
+     } yield ()).ignore
+  }
 }

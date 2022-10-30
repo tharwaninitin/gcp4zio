@@ -30,7 +30,7 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: ${{ matrix.java-version }}
-      - name: Run DP Tests
+      - name: Compile DP Tests
         run: sbt ";project dp; +Test/compile"
   gcs:
     runs-on: ubuntu-latest
@@ -45,7 +45,7 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: ${{ matrix.java-version }}
-      - name: Run GCS Tests
+      - name: Compile GCS Tests
         run: sbt ";project gcs; +Test/compile"
   pubsub:
     runs-on: ubuntu-latest
@@ -60,5 +60,20 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: ${{ matrix.java-version }}
-      - name: Run PubSub Tests
+      - name: Compile PubSub Tests
         run: sbt ";project pubsub; +Test/compile"
+  monitoring:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [ 8, 11, 14 ]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: ${{ matrix.java-version }}
+      - name: Compile Cloud Monitoring Tests
+        run: sbt ";project monitoring; +Test/compile"

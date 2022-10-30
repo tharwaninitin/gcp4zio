@@ -17,6 +17,15 @@ lazy val commonSettings = Seq(
       case _             => Seq()
     }
   },
+  Compile / compile / wartremoverErrors ++= Warts.allBut(
+    Wart.Any,
+    Wart.DefaultArguments,
+    Wart.Nothing,
+    Wart.Equals,
+    Wart.FinalCaseClass,
+    Wart.Overloading,
+    Wart.StringPlusAny
+  ),
   Test / parallelExecution := false,
   testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 )
@@ -26,7 +35,7 @@ lazy val gcp4zio = (project in file("."))
     crossScalaVersions := Nil, // crossScalaVersions must be set to Nil on the aggregating project
     publish / skip     := true
   )
-  .aggregate(bq, dp, gcs, pubsub)
+  .aggregate(bq, dp, gcs, pubsub, monitoring)
 
 lazy val bq = (project in file("modules/bq"))
   .settings(commonSettings)
@@ -44,4 +53,18 @@ lazy val pubsub = (project in file("modules/pubsub"))
   .settings(commonSettings)
   .settings(name := "gcp4zio-pubsub", libraryDependencies ++= coreLibs ++ pubSubLibs ++ testLibs)
 
-addCommandAlias("cd", "project")
+lazy val monitoring = (project in file("modules/monitoring"))
+  .settings(commonSettings)
+  .settings(name := "gcp4zio-monitoring", libraryDependencies ++= coreLibs ++ monitoringLibs ++ testLibs)
+
+lazy val docs = project
+  .in(file("modules/docs")) // important: it must not be docs/
+  .dependsOn(bq, dp, gcs, pubsub, monitoring)
+  .settings(
+    name           := "gcp4zio-docs",
+    publish / skip := true,
+    mdocVariables  := Map("VERSION" -> version.value),
+    mdocIn         := new File("docs/readme.template.md"),
+    mdocOut        := new File("README.md")
+  )
+  .enablePlugins(MdocPlugin)

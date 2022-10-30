@@ -1,10 +1,9 @@
 package gcp4zio.pubsub.subscription
 
 import com.google.pubsub.v1.Subscription
-import gcp4zio.pubsub.PSSubEnv
 import zio._
 
-trait PSSubscription[F[_]] {
+trait PSSubscription {
 
   /** @param project
     *   GCP Project ID
@@ -17,7 +16,7 @@ trait PSSubscription[F[_]] {
     * @return
     *   Subscription
     */
-  def createPullSubscription(project: String, subscription: String, topic: String, ackDeadlineSeconds: Int): F[Subscription]
+  def createPullSubscription(project: String, subscription: String, topic: String, ackDeadlineSeconds: Int): Task[Subscription]
 
   /** @param project
     *   GCP Project ID
@@ -38,7 +37,7 @@ trait PSSubscription[F[_]] {
       topic: String,
       ackDeadlineSeconds: Int,
       pushEndpoint: String
-  ): F[Subscription]
+  ): Task[Subscription]
 
   /** @param project
     *   GCP Project ID
@@ -56,7 +55,7 @@ trait PSSubscription[F[_]] {
       subscription: String,
       topic: String,
       bqTableId: String
-  ): F[Subscription]
+  ): Task[Subscription]
 
   /** @param project
     *   GCP Project ID
@@ -65,7 +64,7 @@ trait PSSubscription[F[_]] {
     * @return
     *   Unit
     */
-  def deleteSubscription(project: String, subscription: String): F[Unit]
+  def deleteSubscription(project: String, subscription: String): Task[Unit]
 }
 
 object PSSubscription {
@@ -86,7 +85,7 @@ object PSSubscription {
       subscription: String,
       topic: String,
       ackDeadlineSeconds: Int = 10
-  ): ZIO[PSSubEnv, Throwable, Subscription] =
+  ): ZIO[PSSubscription, Throwable, Subscription] =
     ZIO.environmentWithZIO(_.get.createPullSubscription(project, subscription, topic, ackDeadlineSeconds))
 
   /** @param project
@@ -108,7 +107,7 @@ object PSSubscription {
       topic: String,
       ackDeadlineSeconds: Int = 10,
       pushEndpoint: String
-  ): ZIO[PSSubEnv, Throwable, Subscription] =
+  ): ZIO[PSSubscription, Throwable, Subscription] =
     ZIO.environmentWithZIO(_.get.createPushSubscription(project, subscription, topic, ackDeadlineSeconds, pushEndpoint))
 
   /** @param project
@@ -127,7 +126,7 @@ object PSSubscription {
       subscription: String,
       topic: String,
       bqTableId: String
-  ): ZIO[PSSubEnv, Throwable, Subscription] =
+  ): ZIO[PSSubscription, Throwable, Subscription] =
     ZIO.environmentWithZIO(_.get.createBQSubscription(project, subscription, topic, bqTableId))
 
   /** @param project
@@ -137,7 +136,7 @@ object PSSubscription {
     * @return
     *   Unit
     */
-  def deleteSubscription(project: String, subscription: String): ZIO[PSSubEnv, Throwable, Unit] =
+  def deleteSubscription(project: String, subscription: String): ZIO[PSSubscription, Throwable, Unit] =
     ZIO.environmentWithZIO(_.get.deleteSubscription(project, subscription))
 
   /** Actual live layer
@@ -145,16 +144,16 @@ object PSSubscription {
     * @param path
     *   Optional path to google service account credential file
     * @return
-    *   PSSubEnv
+    *   PSSubscription
     */
-  def live(path: Option[String] = None): TaskLayer[PSSubEnv] =
-    ZLayer.scoped(ZIO.fromAutoCloseable(PSSubscriptionClient(path)).map(client => PSSubscriptionImpl(client)))
+  def live(path: Option[String] = None): TaskLayer[PSSubscription] =
+    ZLayer.scoped(PSSubscriptionClient(path).map(client => PSSubscriptionImpl(client)))
 
   /** Test layer
     *
     * @return
-    *   PSSubEnv
+    *   PSSubscription
     */
-  val test: TaskLayer[PSSubEnv] =
-    ZLayer.scoped(ZIO.fromAutoCloseable(PSSubscriptionClient.testClient).map(client => PSSubscriptionImpl(client)))
+  val test: TaskLayer[PSSubscription] =
+    ZLayer.scoped(PSSubscriptionClient.testClient.map(client => PSSubscriptionImpl(client)))
 }

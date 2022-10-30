@@ -2,6 +2,7 @@ package gcp4zio.bq
 
 import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
 import com.google.cloud.bigquery.{BigQuery, BigQueryOptions}
+import zio.{Task, ZIO}
 import java.io.FileInputStream
 
 object BQClient {
@@ -11,7 +12,13 @@ object BQClient {
     BigQueryOptions.newBuilder().setCredentials(credentials).build().getService
   }
 
-  def apply(path: Option[String] = None): BigQuery = {
+  /** Returns BigQuery object wrapped in ZIO
+    * @param path
+    *   Optional path to Service Account Credentials file
+    * @return
+    *   RIO[Scope, BigQuery]
+    */
+  def apply(path: Option[String] = None): Task[BigQuery] = ZIO.attempt {
     val envPath: String = sys.env.getOrElse("GOOGLE_APPLICATION_CREDENTIALS", "NOT_SET_IN_ENV")
     path match {
       case Some(p) =>
