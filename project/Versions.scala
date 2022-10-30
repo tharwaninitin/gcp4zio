@@ -7,7 +7,7 @@ object Versions {
   val ScalaJavaCollectionCompat = "2.8.1"
 
   val ZioVersion    = "2.0.2"
-  val ZioLogVersion = "2.1.2"
+  val ZioLogVersion = "2.1.3"
 
   val LogbackVersion      = "1.4.4"
   val GcpBqVersion        = "2.18.2"
