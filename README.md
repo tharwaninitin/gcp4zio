@@ -19,11 +19,11 @@ Add the latest release as a dependency to your project
 __SBT__
 ``` scala mdoc
 libraryDependencies ++= List(
-      "com.github.tharwaninitin" %% "gcp4zio-gcs" % 1.1.0,
-      "com.github.tharwaninitin" %% "gcp4zio-dp"  % 1.1.0,
-      "com.github.tharwaninitin" %% "gcp4zio-bq"  % 1.1.0,
-      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % 1.1.0,
-      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % 1.1.0
+      "com.github.tharwaninitin" %% "gcp4zio-gcs" % 1.2.0,
+      "com.github.tharwaninitin" %% "gcp4zio-dp"  % 1.2.0,
+      "com.github.tharwaninitin" %% "gcp4zio-bq"  % 1.2.0,
+      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % 1.2.0,
+      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % 1.2.0
    )
 ```
 __Maven__
@@ -31,7 +31,7 @@ __Maven__
 <dependency>
     <groupId>com.github.tharwaninitin</groupId>
     <artifactId>gcp4zio-gcs_2.12</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 # GCP4ZIO API's
@@ -79,7 +79,7 @@ GCS.deleteObject("gcsBucket", "temp/gcs/prefix/file1.csv")
 import gcp4zio.gcs._
 
 // Copy single object from source bucket to target bucket
-GCSApi.copyObjectsGCStoGCS(
+GCS.copyObjectsGCStoGCS(
   srcBucket = "srcBucket",
   srcPrefix = Some("temp/gcs/prefix/file1.csv"),
   targetBucket = "targetBucket",
@@ -87,13 +87,13 @@ GCSApi.copyObjectsGCStoGCS(
 )
 
 // Copy all objects from source bucket to target bucket
-GCSApi.copyObjectsGCStoGCS(
+GCS.copyObjectsGCStoGCS(
   srcBucket = "srcBucket",
   targetBucket = "targetBucket"
 )
 
 // Copy all objects from source bucket with prefix to target bucket
-GCSApi.copyObjectsGCStoGCS(
+GCS.copyObjectsGCStoGCS(
   srcBucket = "srcBucket",
   srcPrefix = Some("temp/gcs/prefix"),
   targetBucket = "targetBucket"
@@ -195,9 +195,10 @@ Check [this](examples/src/main/scala/PS.scala) example to use PubSub APIs
 ## Monitoring API
 ```scala
 import gcp4zio.monitoring._
+import com.google.monitoring.v3.TimeInterval
 
 // Get GCS Cloud Monitoring metric data (time-series data)
-MonitoringApi.getMetric(
+Monitoring.getMetric(
   project = "PROJECT_ID", 
   metric = "compute.googleapis.com/instance/cpu/usage_time", 
   interval = TimeInterval.getDefaultInstance  // Provide TimeInterval with start and end time

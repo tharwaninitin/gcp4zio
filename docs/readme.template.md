@@ -55,7 +55,7 @@ __Maven__
 
 ## Google Cloud Storage API
 ### CRUD Operations
-```scala
+```scala mdoc:silent
 import gcp4zio.gcs._
 import java.nio.file.Paths
 
@@ -79,7 +79,7 @@ GCS.deleteObject("gcsBucket", "temp/gcs/prefix/file1.csv")
 import gcp4zio.gcs._
 
 // Copy single object from source bucket to target bucket
-GCSApi.copyObjectsGCStoGCS(
+GCS.copyObjectsGCStoGCS(
   srcBucket = "srcBucket",
   srcPrefix = Some("temp/gcs/prefix/file1.csv"),
   targetBucket = "targetBucket",
@@ -87,13 +87,13 @@ GCSApi.copyObjectsGCStoGCS(
 )
 
 // Copy all objects from source bucket to target bucket
-GCSApi.copyObjectsGCStoGCS(
+GCS.copyObjectsGCStoGCS(
   srcBucket = "srcBucket",
   targetBucket = "targetBucket"
 )
 
 // Copy all objects from source bucket with prefix to target bucket
-GCSApi.copyObjectsGCStoGCS(
+GCS.copyObjectsGCStoGCS(
   srcBucket = "srcBucket",
   srcPrefix = Some("temp/gcs/prefix"),
   targetBucket = "targetBucket"
@@ -176,7 +176,7 @@ val publishMsg = PSPublisher.produce[String]("String Message")
 publishMsg.provide(PSPublisher.live("gcsProjectId", "topic"))
 ```
 ### Subscriber API
-```scala
+```scala mdoc:silent
 import gcp4zio.pubsub.subscriber._
 import zio._
 
@@ -193,11 +193,12 @@ val task = subscriberStream.mapZIO { msg =>
 Check [this](examples/src/main/scala/PS.scala) example to use PubSub APIs   
   
 ## Monitoring API
-```scala
+```scala mdoc:silent
 import gcp4zio.monitoring._
+import com.google.monitoring.v3.TimeInterval
 
 // Get GCS Cloud Monitoring metric data (time-series data)
-MonitoringApi.getMetric(
+Monitoring.getMetric(
   project = "PROJECT_ID", 
   metric = "compute.googleapis.com/instance/cpu/usage_time", 
   interval = TimeInterval.getDefaultInstance  // Provide TimeInterval with start and end time
