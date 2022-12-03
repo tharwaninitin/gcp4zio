@@ -40,12 +40,13 @@ case class GCSImpl(client: Storage) extends GCS {
     }
     .catchAll(_ => ZIO.succeed(false))
 
-  override def putObject(bucket: String, prefix: String, file: Path, options: List[BlobTargetOption]): Task[Blob] = ZIO.attempt {
-    val blobId   = BlobId.of(bucket, prefix)
-    val blobInfo = BlobInfo.newBuilder(blobId).build
-    logger.info(s"Copying object from local fs $file to gs://$bucket/$prefix")
-    client.create(blobInfo, Files.readAllBytes(file), options: _*)
-  }
+  override def putObject(bucket: String, prefix: String, file: Path, options: List[BlobTargetOption], log: Boolean): Task[Blob] =
+    ZIO.attempt {
+      val blobId   = BlobId.of(bucket, prefix)
+      val blobInfo = BlobInfo.newBuilder(blobId).build
+      if (log) logger.info(s"Copying object from local fs $file to gs://$bucket/$prefix")
+      client.create(blobInfo, Files.readAllBytes(file), options: _*)
+    }
 
   override def putObject(bucket: String, prefix: String, options: List[BlobWriteOption]): GCSSink = {
     val os: ZIO[Scope, IOException, OutputStream] = ZIO
@@ -95,37 +96,41 @@ case class GCSImpl(client: Storage) extends GCS {
       srcOptions: List[BlobListOption],
       targetBucket: String,
       targetPrefix: scala.Option[String],
-      parallelism: Int
-  ): Task[Unit] = listObjects(srcBucket, srcPrefix, srcRecursive, srcOptions)
+      parallelism: Int,
+      log: Boolean
+  ): Task[Long] = listObjects(srcBucket, srcPrefix, srcRecursive, srcOptions)
     .mapZIOPar(parallelism) { blob =>
       ZIO.attempt {
         targetPrefix.fold {
-          logger.info(s"Copying object from gs://$srcBucket/${blob.getName} to gs://$targetBucket/${blob.getName}")
+          if (log) logger.info(s"Copying object from gs://$srcBucket/${blob.getName} to gs://$targetBucket/${blob.getName}")
           blob.copyTo(targetBucket)
         } { tp =>
           val targetPath = getTargetPath(srcPrefix.getOrElse(""), tp, blob.getName)
-          logger.info(s"Copying object from gs://$srcBucket/${blob.getName} to gs://$targetBucket/$targetPath")
+          if (log) logger.info(s"Copying object from gs://$srcBucket/${blob.getName} to gs://$targetBucket/$targetPath")
           blob.copyTo(targetBucket, targetPath)
         }
       }
     }
-    .runDrain
+    .runCount
+    .tap(count => ZIO.succeed(logger.info(s"Copied $count files from GCS to GCS")))
 
   override def copyObjectsLOCALtoGCS(
       srcPath: String,
       targetBucket: String,
       targetPrefix: String,
       parallelism: Int,
-      overwrite: Boolean
-  ): Task[Unit] = {
+      overwrite: Boolean,
+      log: Boolean
+  ): Task[Long] = {
     val opts = if (overwrite) List.empty else List(BlobTargetOption.doesNotExist())
     GCSImpl
       .listLocalFsObjects(srcPath)
       .mapZIOPar(parallelism) { path =>
         val targetPath = getTargetPath(srcPath, targetPrefix, path.toString)
-        putObject(targetBucket, targetPath, path, opts)
+        putObject(targetBucket, targetPath, path, opts, log)
       }
-      .runDrain
+      .runCount
+      .tap(count => ZIO.succeed(logger.info(s"Copied $count file/s from LOCAL to GCS")))
   }
 
   override def getPSNotification(bucket: String, notificationId: String): Task[Notification] = ZIO.attempt {
