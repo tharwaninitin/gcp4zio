@@ -9,7 +9,7 @@ object GCSCopyTestSuite {
   val spec: Spec[GCS, Any] =
     suite("GCS Copy Apis")(
       test("Execute copyObjectsLOCALtoGCS single file") {
-        val step = GCS.copyObjectsLOCALtoGCS(filePathCsv, gcsBucket, "temp/test/ratings.csv", 2, true)
+        val step = GCS.copyObjectsLOCALtoGCS(filePathCsv, gcsBucket, "temp/test/ratings.csv", 2, true, true)
         assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       },
       test("Execute copyObjectsLOCALtoGCS directory") {
@@ -17,23 +17,22 @@ object GCSCopyTestSuite {
         assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       },
       test("Execute copyObjectsGCStoGCS single file") {
-        val step =
-          GCS.copyObjectsGCStoGCS(
-            srcBucket = gcsBucket,
-            srcPrefix = Some("temp/test/ratings.csv"),
-            targetBucket = gcsBucket,
-            targetPrefix = Some("temp2/test/ratings.csv")
-          )
+        val step = GCS.copyObjectsGCStoGCS(
+          srcBucket = gcsBucket,
+          srcPrefix = Some("temp/test/ratings.csv"),
+          targetBucket = gcsBucket,
+          targetPrefix = Some("temp2/test/ratings.csv"),
+          log = true
+        )
         assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       },
       test("Execute copyObjectsGCStoGCS directory") {
-        val step =
-          GCS.copyObjectsGCStoGCS(
-            gcsBucket,
-            Some("temp/test/"),
-            targetBucket = gcsBucket,
-            targetPrefix = Some("temp2/test/")
-          )
+        val step = GCS.copyObjectsGCStoGCS(
+          gcsBucket,
+          Some("temp/test/"),
+          targetBucket = gcsBucket,
+          targetPrefix = Some("temp2/test/")
+        )
         assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
       }
     ) @@ TestAspect.sequential

@@ -11,7 +11,7 @@ import java.nio.file.Path
 trait GCS {
   def getObject(bucket: String, prefix: String, file: Path): Task[Unit]
   def getObject(bucket: String, prefix: String, chunkSize: Int): GCSStream
-  def putObject(bucket: String, prefix: String, file: Path, options: List[BlobTargetOption]): Task[Blob]
+  def putObject(bucket: String, prefix: String, file: Path, options: List[BlobTargetOption], log: Boolean): Task[Blob]
   def putObject(bucket: String, prefix: String, options: List[BlobWriteOption]): GCSSink
   def lookupObject(bucket: String, prefix: String): Task[Boolean]
   def deleteObject(bucket: String, prefix: String): Task[Boolean]
@@ -23,15 +23,17 @@ trait GCS {
       srcOptions: List[BlobListOption],
       targetBucket: String,
       targetPrefix: Option[String],
-      parallelism: Int
-  ): Task[Unit]
+      parallelism: Int,
+      log: Boolean
+  ): Task[Long]
   def copyObjectsLOCALtoGCS(
       srcPath: String,
       targetBucket: String,
       targetPrefix: String,
       parallelism: Int,
-      overwrite: Boolean
-  ): Task[Unit]
+      overwrite: Boolean,
+      log: Boolean
+  ): Task[Long]
   def getPSNotification(bucket: String, notificationId: String): Task[Notification]
   def createPSNotification(
       bucket: String,
@@ -54,9 +56,10 @@ object GCS {
       bucket: String,
       prefix: String,
       file: Path,
-      options: List[BlobTargetOption] = List.empty
+      options: List[BlobTargetOption] = List.empty,
+      log: Boolean = false
   ): ZIO[GCS, Throwable, Blob] =
-    ZIO.environmentWithZIO(_.get.putObject(bucket, prefix, file, options))
+    ZIO.environmentWithZIO(_.get.putObject(bucket, prefix, file, options, log))
   def putObject(bucket: String, prefix: String, options: List[BlobWriteOption]): GCSSinkWithEnv =
     ZSink.environmentWithSink(_.get.putObject(bucket, prefix, options))
   def lookupObject(bucket: String, prefix: String): ZIO[GCS, Throwable, Boolean] =
@@ -77,8 +80,9 @@ object GCS {
       srcOptions: List[BlobListOption] = List.empty,
       targetBucket: String,
       targetPrefix: Option[String] = None,
-      parallelism: Int = 2
-  ): ZIO[GCS, Throwable, Unit] =
+      parallelism: Int = 2,
+      log: Boolean = false
+  ): ZIO[GCS, Throwable, Long] =
     ZIO.environmentWithZIO(
       _.get.copyObjectsGCStoGCS(
         srcBucket,
@@ -87,7 +91,8 @@ object GCS {
         srcOptions,
         targetBucket,
         targetPrefix,
-        parallelism
+        parallelism,
+        log
       )
     )
   def copyObjectsLOCALtoGCS(
@@ -95,9 +100,10 @@ object GCS {
       targetBucket: String,
       targetPrefix: String,
       parallelism: Int,
-      overwrite: Boolean
-  ): ZIO[GCS, Throwable, Unit] =
-    ZIO.environmentWithZIO(_.get.copyObjectsLOCALtoGCS(srcPath, targetBucket, targetPrefix, parallelism, overwrite))
+      overwrite: Boolean,
+      log: Boolean = false
+  ): ZIO[GCS, Throwable, Long] =
+    ZIO.environmentWithZIO(_.get.copyObjectsLOCALtoGCS(srcPath, targetBucket, targetPrefix, parallelism, overwrite, log))
   def getPSNotification(bucket: String, notificationId: String): ZIO[GCS, Throwable, Notification] =
     ZIO.environmentWithZIO(_.get.getPSNotification(bucket, notificationId))
   def createPSNotification(

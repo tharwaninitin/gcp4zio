@@ -4,15 +4,15 @@ object Versions {
   val Scala3           = "3.2.1"
   val AllScalaVersions = List(Scala212, Scala213, Scala3)
 
-  val ScalaJavaCollectionCompat = "2.8.1"
+  val ScalaJavaCollectionCompat = "2.9.0"
 
-  val ZioVersion    = "2.0.2"
-  val ZioLogVersion = "2.1.3"
+  val ZioVersion    = "2.0.4"
+  val ZioLogVersion = "2.1.5"
 
-  val LogbackVersion      = "1.4.4"
-  val GcpBqVersion        = "2.18.2"
-  val GcpDpVersion        = "4.2.0"
-  val GcpGcsVersion       = "2.14.0"
-  val GcpPubSubVersion    = "1.120.24"
-  val CloudMonitorVersion = "3.6.0"
+  val LogbackVersion      = "1.4.5"
+  val GcpBqVersion        = "2.19.1"
+  val GcpDpVersion        = "4.3.0"
+  val GcpGcsVersion       = "2.15.1"
+  val GcpPubSubVersion    = "1.122.1"
+  val CloudMonitorVersion = "3.7.0"
 }
