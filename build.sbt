@@ -63,7 +63,7 @@ lazy val docs = project
   .settings(
     name           := "gcp4zio-docs",
     publish / skip := true,
-    mdocVariables  := Map("VERSION" -> version.value),
+    mdocVariables  := Map("VERSION" -> version.value, "Scala212" -> Scala212, "Scala213" -> Scala213, "Scala3" -> Scala3),
     mdocIn         := new File("docs/readme.template.md"),
     mdocOut        := new File("README.md")
   )
