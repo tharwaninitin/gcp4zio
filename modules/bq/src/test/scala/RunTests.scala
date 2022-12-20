@@ -1,11 +1,11 @@
-import gcp4zio.bq.BQSchemaMappingTestSuite
+import gcp4zio.bq._
 import zio.test._
-//import gcp4zio.bq.BQ
 
 object RunTests extends ZIOSpecDefault {
 
   override def spec: Spec[TestEnvironment, Any] = suite("BQ Apis")(
     BQSchemaMappingTestSuite.spec
-    // BQStepsTestSuite.spec,
+//    BQLoadExportTestSuite.spec,
+//    BQQueryTestSuite.spec
   ) @@ TestAspect.sequential // .provideShared(BQ.live().orDie)
 }

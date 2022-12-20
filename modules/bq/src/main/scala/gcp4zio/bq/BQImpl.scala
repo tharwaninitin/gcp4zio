@@ -2,11 +2,10 @@ package gcp4zio
 package bq
 
 import com.google.cloud.bigquery._
-import gcp4zio.bq.BQInputType.{CSV, JSON, ORC, PARQUET}
+import gcp4zio.bq.FileType.{CSV, JSON, ORC, PARQUET}
 import zio.{Task, ZIO}
 import java.util.UUID
 import scala.jdk.CollectionConverters._
-import scala.sys.process._
 
 @SuppressWarnings(
   Array(
@@ -19,7 +18,7 @@ import scala.sys.process._
 )
 case class BQImpl(client: BigQuery) extends BQ {
 
-  private def getFormatOptions(inputType: BQInputType): FormatOptions = inputType match {
+  private def getFormatOptions(inputType: FileType): FormatOptions = inputType match {
     case PARQUET => FormatOptions.parquet
     case ORC     => FormatOptions.orc
     case CSV(field_delimiter, header_present, _, _) =>
@@ -31,6 +30,11 @@ case class BQImpl(client: BigQuery) extends BQ {
     case _ => FormatOptions.parquet
   }
 
+  /** Execute SQL query on BigQuery, this API does not returns any data. So it can be used to run any DML/DDL queries
+    * @param query
+    *   SQL query(INSERT, CREATE) to execute
+    * @return
+    */
   def executeQuery(query: String): Task[Unit] = ZIO.attempt {
     val queryConfig: QueryJobConfiguration = QueryJobConfiguration
       .newBuilder(query)
@@ -59,7 +63,16 @@ case class BQImpl(client: BigQuery) extends BQ {
     }
   }
 
-  def getData(query: String): Task[Iterable[FieldValueList]] = ZIO.attempt {
+  /** Execute SQL query on BigQuery, this API returns rows. So it can be used to run any SELECT queries
+    * @param query
+    *   SQL query(SELECT) to execute
+    * @param fn
+    *   function to convert FieldValueList to Scala Type T
+    * @tparam T
+    *   Scala Type for output rows
+    * @return
+    */
+  def getData[T](query: String)(fn: FieldValueList => T): Task[Iterable[T]] = ZIO.attempt {
     val queryConfig: QueryJobConfiguration = QueryJobConfiguration
       .newBuilder(query)
       .setUseLegacySql(false)
@@ -72,89 +85,45 @@ case class BQImpl(client: BigQuery) extends BQ {
     val job = queryJob.waitFor()
 
     val result: TableResult = job.getQueryResults()
-    result.iterateAll().asScala
+    result.iterateAll().asScala.map(fn)
   }
 
-  def loadTableFromLocalFile(
-      sourceLocations: Either[String, Seq[(String, String)]],
-      sourceFormat: BQInputType,
-      destinationDataset: String,
-      destinationTable: String
-  ): Task[Unit] = ZIO.attempt {
-    sourceLocations match {
-      case Left(path) =>
-        logger.info("BQ file path: " + path)
-        val fullTableName = destinationDataset + "." + destinationTable
-        val bqLoadCmd =
-          s"""bq load --replace --source_format=${sourceFormat.toString} $fullTableName $path""".stripMargin
-        logger.info(s"Loading data from path: $path")
-        logger.info(s"Destination table: $fullTableName")
-        logger.info(s"BQ Load command is: $bqLoadCmd")
-        val x = s"$bqLoadCmd".!
-        logger.info(s"Output exit code: $x")
-        if (x != 0) throw BQLoadException("Error executing BQ load command")
-      case Right(list) =>
-        logger.info(s"No of BQ partitions: ${list.length}")
-        list.foreach { case (src_path, partition) =>
-          val tablePartition = destinationTable + "$" + partition
-          val fullTableName  = destinationDataset + "." + tablePartition
-          val bqLoadCmd =
-            s"""bq load --replace --time_partitioning_field date --require_partition_filter=false --source_format=${sourceFormat.toString} $fullTableName $src_path""".stripMargin
-          logger.info(s"Loading data from path: $src_path")
-          logger.info(s"Destination table: $fullTableName")
-          logger.info(s"BQ Load command is: $bqLoadCmd")
-          val x = s"$bqLoadCmd".!
-          logger.info(s"Output exit code: $x")
-          if (x != 0) throw BQLoadException("Error executing BQ load command")
-        }
-    }
-  }
-
-  override def loadPartitionedTable(
-      sourcePathsPartitions: Seq[(String, String)],
-      sourceFormat: BQInputType,
-      destinationProject: scala.Option[String],
-      destinationDataset: String,
-      destinationTable: String,
-      writeDisposition: JobInfo.WriteDisposition,
-      createDisposition: JobInfo.CreateDisposition,
-      schema: scala.Option[Schema],
-      parallelism: Int
-  ): Task[Map[String, Long]] = {
-    logger.info(s"No of BQ partitions: ${sourcePathsPartitions.length}")
-    ZIO
-      .foreachPar(sourcePathsPartitions) { case (src_path, partition) =>
-        loadTable(
-          src_path,
-          sourceFormat,
-          destinationProject,
-          destinationDataset,
-          destinationTable + "$" + partition,
-          writeDisposition,
-          createDisposition
-        )
-      }
-      .withParallelism(parallelism)
-      .map(x => x.flatten.toMap)
-  }
-
+  /** Load data into BigQuery from GCS
+    * @param sourcePath
+    *   Source GCS path from which we need to load data into BigQuery
+    * @param sourceFormat
+    *   File format of source data in GCS
+    * @param targetProject
+    *   Target Google Project ID
+    * @param targetDataset
+    *   Target Dataset name
+    * @param targetTable
+    *   Target Table name
+    * @param writeDisposition
+    *   Write Disposition for table
+    * @param createDisposition
+    *   Create Disposition for table
+    * @param schema
+    *   Schema for source files(Useful in case of CSV and JSON)
+    * @return
+    */
   override def loadTable(
       sourcePath: String,
-      sourceFormat: BQInputType,
-      destinationProject: scala.Option[String],
-      destinationDataset: String,
-      destinationTable: String,
+      sourceFormat: FileType,
+      targetProject: scala.Option[String],
+      targetDataset: String,
+      targetTable: String,
       writeDisposition: JobInfo.WriteDisposition,
       createDisposition: JobInfo.CreateDisposition,
       schema: scala.Option[Schema]
   ): Task[Map[String, Long]] = ZIO.attempt {
-    val tableId = destinationProject match {
-      case Some(project) => TableId.of(project, destinationDataset, destinationTable)
-      case None          => TableId.of(destinationDataset, destinationTable)
+    val tableId = targetProject match {
+      case Some(project) => TableId.of(project, targetDataset, targetTable)
+      case None          => TableId.of(targetDataset, targetTable)
     }
 
     val jobConfiguration: JobConfiguration = sourceFormat match {
-      case BQInputType.BQ =>
+      case FileType.BQ =>
         QueryJobConfiguration
           .newBuilder(sourcePath)
           .setUseLegacySql(false)
@@ -189,31 +158,48 @@ case class BQImpl(client: BigQuery) extends BQ {
     val job: Job     = client.create(JobInfo.newBuilder(jobConfiguration).setJobId(jobId).build())
 
     // Wait for the job to complete
-    val completedJob        = job.waitFor()
-    val destinationTableDef = client.getTable(tableId).getDefinition[StandardTableDefinition]
+    val completedJob   = job.waitFor()
+    val targetTableDef = client.getTable(tableId).getDefinition[StandardTableDefinition]
 
     if (completedJob.getStatus.getError == null) {
       logger.info(s"Source path: $sourcePath")
-      logger.info(s"Destination table: $destinationDataset.$destinationTable")
+      logger.info(s"Destination table: $targetDataset.$targetTable")
       logger.info(s"Job State: ${completedJob.getStatus.getState}")
-      logger.info(s"Loaded rows: ${destinationTableDef.getNumRows}")
-      logger.info(s"Loaded rows size: ${destinationTableDef.getNumBytes / 1000000.0} MB")
+      logger.info(s"Loaded rows: ${targetTableDef.getNumRows}")
+      logger.info(s"Loaded rows size: ${targetTableDef.getNumBytes / 1000000.0} MB")
     } else {
       throw BQLoadException(
-        s"""Could not load data in ${sourceFormat.toString} format in table ${destinationDataset + "." + destinationTable} due to error ${completedJob.getStatus.getError.getMessage}""".stripMargin
+        s"""Could not load data in ${sourceFormat.toString} format in table ${targetDataset + "." + targetTable} due to error ${completedJob.getStatus.getError.getMessage}""".stripMargin
       )
     }
-    Map(destinationTable -> destinationTableDef.getNumRows)
+    Map(targetTable -> targetTableDef.getNumRows)
   }
 
+  /** Export data from BigQuery to GCS
+    * @param sourceDataset
+    *   Source Dataset name
+    * @param sourceTable
+    *   Source Table name
+    * @param sourceProject
+    *   Source Google Project ID
+    * @param targetPath
+    *   Target GCS path
+    * @param targetFormat
+    *   File format for target GCS location
+    * @param targetFileName
+    *   Filename in case we want to create single file in target
+    * @param targetCompressionType
+    *   Compression for destination files
+    * @return
+    */
   override def exportTable(
       sourceDataset: String,
       sourceTable: String,
       sourceProject: scala.Option[String],
-      destinationPath: String,
-      destinationFileName: scala.Option[String],
-      destinationFormat: BQInputType,
-      destinationCompressionType: String = "gzip"
+      targetPath: String,
+      targetFormat: FileType,
+      targetFileName: scala.Option[String],
+      targetCompressionType: String = "gzip"
   ): Task[Unit] = ZIO.attempt {
 
     val tableId = sourceProject match {
@@ -221,33 +207,33 @@ case class BQImpl(client: BigQuery) extends BQ {
       case None          => TableId.of(sourceDataset, sourceTable)
     }
 
-    val destinationFormatStr = destinationFormat match {
+    val targetFormatStr = targetFormat match {
       case CSV(_, _, _, _) => "CSV"
       case PARQUET         => "PARQUET"
-      case fmt             => throw BQLoadException(s"Unsupported destination format $fmt")
+      case fmt             => throw BQLoadException(s"Unsupported target format $fmt")
     }
 
-    val destinationUri =
-      destinationPath + "/" + destinationFileName.getOrElse(s"part-*.${destinationFormatStr.toLowerCase}")
+    val targetUri =
+      targetPath + "/" + targetFileName.getOrElse(s"part-*.${targetFormatStr.toLowerCase}")
 
-    val extractJobConfiguration: ExtractJobConfiguration = destinationFormat match {
+    val extractJobConfiguration: ExtractJobConfiguration = targetFormat match {
       case CSV(delimiter, _, _, _) =>
         ExtractJobConfiguration
-          .newBuilder(tableId, destinationUri)
+          .newBuilder(tableId, targetUri)
           .setFormat(CSV.toString())
           .setFieldDelimiter(delimiter)
           .build();
       case PARQUET =>
         ExtractJobConfiguration
-          .newBuilder(tableId, destinationUri)
+          .newBuilder(tableId, targetUri)
           .setFormat(PARQUET.toString)
-          .setCompression(destinationCompressionType)
+          .setCompression(targetCompressionType)
           .build();
       case JSON(_) =>
         ExtractJobConfiguration
-          .newBuilder(tableId, destinationUri)
+          .newBuilder(tableId, targetUri)
           .setFormat(JSON.toString())
-          .setCompression(destinationCompressionType)
+          .setCompression(targetCompressionType)
           .build();
       case _ => throw BQLoadException("Unsupported Destination Format")
     }
@@ -258,13 +244,13 @@ case class BQImpl(client: BigQuery) extends BQ {
 
     if (completedJob.getStatus.getError == null) {
       logger.info(s"Source table: $sourceDataset.$sourceTable")
-      logger.info(s"Destination path: $destinationPath")
+      logger.info(s"Destination path: $targetPath")
       logger.info(s"Job State: ${completedJob.getStatus.getState}")
     } else if (completedJob.getStatus.getError != null) {
       logger.error(s"BigQuery was unable to extract due to an error:" + job.getStatus.getError)
     } else {
       throw BQLoadException(
-        s"""Could not load data from bq table $sourceDataset.$sourceTable to  location  $destinationFileName due to error ${completedJob.getStatus.getError.getMessage}""".stripMargin
+        s"""Could not load data from BQ table $sourceDataset.$sourceTable to location  $targetFileName due to error ${completedJob.getStatus.getError.getMessage}""".stripMargin
       )
     }
   }
