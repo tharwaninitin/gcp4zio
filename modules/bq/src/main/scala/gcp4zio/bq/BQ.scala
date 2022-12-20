@@ -80,7 +80,7 @@ object BQ {
     * @param fn
     *   function to convert FieldValueList to Scala Type T
     * @tparam T
-    *   Scala Class for output rows
+    *   Scala Type for output rows
     * @return
     */
   def getData[T](query: String)(fn: FieldValueList => T): RIO[BQ, Iterable[T]] =

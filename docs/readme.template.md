@@ -51,6 +51,8 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
     - [Dataproc Cluster](#dataproc-cluster)
     - [Dataproc Job](#dataproc-job)
   - [Bigquery](#bigquery-api)
+    - [Query/Read](#running-sql-queries-in-bigquery)
+    - [Load/Export](#loadingexporting-data-fromto-gcs)
   - [PubSub](#pubsub-api)
     - [Topic](#topic)
     - [Subscription](#subscription)
@@ -64,6 +66,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
 ```scala mdoc:silent
 import gcp4zio.gcs._
 import java.nio.file.Paths
+import zio._
 
 // Upload single object from local to provided bucket at provided prefix
 val localPath1 = Paths.get("/local/path/to/file1.csv")
@@ -142,6 +145,19 @@ job.provide(DPJob.live("dpEndpoint"))
 ```  
 
 ## Bigquery API
+### Running SQL Queries in BigQuery
+```scala mdoc:silent
+import gcp4zio.bq._
+
+// Execute DML/DDL query on Bigquery
+val task1: RIO[BQ, Unit] = BQ.executeQuery("CREATE TABLE test (column1 STRING)")
+
+// Execute SELECT query on Bigquery
+val task2: RIO[BQ, Iterable[String]] = BQ.getData("SELECT * FROM test")(rs => rs.get("column1").getStringValue)
+
+(task1 *> task2).provide(BQ.live())
+```  
+### Loading/Exporting data from/to GCS
 ```scala mdoc:silent
 import gcp4zio.bq._
 import gcp4zio.bq.BQInputType.PARQUET

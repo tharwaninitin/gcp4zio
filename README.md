@@ -21,11 +21,11 @@ This project is compiled with scala versions 2.12.17, 2.13.10, 3.2.1
 __SBT__
 ``` scala mdoc
 libraryDependencies ++= List(
-      "com.github.tharwaninitin" %% "gcp4zio-gcs" % "1.2.1",
-      "com.github.tharwaninitin" %% "gcp4zio-dp"  % "1.2.1",
-      "com.github.tharwaninitin" %% "gcp4zio-bq"  % "1.2.1",
-      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % "1.2.1",
-      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % "1.2.1"
+      "com.github.tharwaninitin" %% "gcp4zio-gcs" % "1.3.0",
+      "com.github.tharwaninitin" %% "gcp4zio-dp"  % "1.3.0",
+      "com.github.tharwaninitin" %% "gcp4zio-bq"  % "1.3.0",
+      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % "1.3.0",
+      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % "1.3.0"
    )
 ```
 __Maven__
@@ -33,7 +33,7 @@ __Maven__
 <dependency>
     <groupId>com.github.tharwaninitin</groupId>
     <artifactId>gcp4zio-gcs_2.12</artifactId>
-    <version>1.2.1</version>
+    <version>1.3.0</version>
 </dependency>
 ```
 # GCP4ZIO API's
@@ -51,6 +51,8 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
     - [Dataproc Cluster](#dataproc-cluster)
     - [Dataproc Job](#dataproc-job)
   - [Bigquery](#bigquery-api)
+    - [Query/Read](#running-sql-queries-in-bigquery)
+    - [Load/Export](#loadingexporting-data-fromto-gcs)
   - [PubSub](#pubsub-api)
     - [Topic](#topic)
     - [Subscription](#subscription)
@@ -64,6 +66,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
 ```scala
 import gcp4zio.gcs._
 import java.nio.file.Paths
+import zio._
 
 // Upload single object from local to provided bucket at provided prefix
 val localPath1 = Paths.get("/local/path/to/file1.csv")
@@ -142,6 +145,19 @@ job.provide(DPJob.live("dpEndpoint"))
 ```  
 
 ## Bigquery API
+### Running SQL Queries in BigQuery
+```scala
+import gcp4zio.bq._
+
+// Execute DML/DDL query on Bigquery
+val task1: RIO[BQ, Unit] = BQ.executeQuery("CREATE TABLE test (column1 STRING)")
+
+// Execute SELECT query on Bigquery
+val task2: RIO[BQ, Iterable[String]] = BQ.getData("SELECT * FROM test")(rs => rs.get("column1").getStringValue)
+
+(task1 *> task2).provide(BQ.live())
+```  
+### Loading/Exporting data from/to GCS
 ```scala
 import gcp4zio.bq._
 import gcp4zio.bq.BQInputType.PARQUET
