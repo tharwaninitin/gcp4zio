@@ -2,17 +2,35 @@ package gcp4zio
 package bq
 
 import com.google.cloud.bigquery.{FieldValueList, JobInfo, Schema}
-import zio.{Task, TaskLayer, ZIO, ZLayer}
+import zio.{RIO, Task, TaskLayer, ZIO, ZLayer}
 
 trait BQ {
+
+  /** Execute SQL query on BigQuery, this API does not returns any data. So it can be used to run any DML/DDL queries
+    * @param query
+    *   SQL query(INSERT, CREATE) to execute
+    * @return
+    */
   def executeQuery(query: String): Task[Unit]
-  def getData(query: String): Task[Iterable[FieldValueList]]
+
+  /** Execute SQL query on BigQuery, this API returns rows. So it can be used to run any SELECT queries
+    * @param query
+    *   SQL query(SELECT) to execute
+    * @param fn
+    *   function to convert FieldValueList to Scala Type T
+    * @tparam T
+    *   Scala Class for output rows
+    * @return
+    */
+  def getData[T](query: String)(fn: FieldValueList => T): Task[Iterable[T]]
+
   def loadTableFromLocalFile(
       sourceLocations: Either[String, Seq[(String, String)]],
       sourceFormat: BQInputType,
       destinationDataset: String,
       destinationTable: String
   ): Task[Unit]
+
   def loadTable(
       sourcePath: String,
       sourceFormat: BQInputType,
@@ -23,6 +41,7 @@ trait BQ {
       createDisposition: JobInfo.CreateDisposition,
       schema: Option[Schema] = None
   ): Task[Map[String, Long]]
+
   def loadPartitionedTable(
       sourcePathsPartitions: Seq[(String, String)],
       sourceFormat: BQInputType,
@@ -34,6 +53,7 @@ trait BQ {
       schema: Option[Schema],
       parallelism: Int
   ): Task[Map[String, Long]]
+
   def exportTable(
       sourceDataset: String,
       sourceTable: String,
@@ -46,22 +66,40 @@ trait BQ {
 }
 
 object BQ {
-  def executeQuery(query: String): ZIO[BQ, Throwable, Unit]                = ZIO.environmentWithZIO(_.get.executeQuery(query))
-  def getData(query: String): ZIO[BQ, Throwable, Iterable[FieldValueList]] = ZIO.environmentWithZIO(_.get.getData(query))
+
+  /** Execute SQL query on BigQuery, this API does not returns any data. So it can be used to run any DML/DDL queries
+    * @param query
+    *   SQL query(INSERT, CREATE) to execute
+    * @return
+    */
+  def executeQuery(query: String): RIO[BQ, Unit] = ZIO.environmentWithZIO(_.get.executeQuery(query))
+
+  /** Execute SQL query on BigQuery, this API returns rows. So it can be used to run any SELECT queries
+    * @param query
+    *   SQL query(SELECT) to execute
+    * @param fn
+    *   function to convert FieldValueList to Scala Type T
+    * @tparam T
+    *   Scala Class for output rows
+    * @return
+    */
+  def getData[T](query: String)(fn: FieldValueList => T): RIO[BQ, Iterable[T]] =
+    ZIO.environmentWithZIO(_.get.getData[T](query)(fn))
+
   def loadTableFromLocalFile(
       sourceLocations: Either[String, Seq[(String, String)]],
       sourceFormat: BQInputType,
       destinationDataset: String,
       destinationTable: String
-  ): ZIO[BQ, Throwable, Unit] =
-    ZIO.environmentWithZIO(
-      _.get.loadTableFromLocalFile(
-        sourceLocations,
-        sourceFormat,
-        destinationDataset,
-        destinationTable
-      )
+  ): RIO[BQ, Unit] = ZIO.environmentWithZIO(
+    _.get.loadTableFromLocalFile(
+      sourceLocations,
+      sourceFormat,
+      destinationDataset,
+      destinationTable
     )
+  )
+
   def loadTable(
       sourcePath: String,
       sourceFormat: BQInputType,
@@ -71,19 +109,19 @@ object BQ {
       writeDisposition: JobInfo.WriteDisposition = JobInfo.WriteDisposition.WRITE_TRUNCATE,
       createDisposition: JobInfo.CreateDisposition = JobInfo.CreateDisposition.CREATE_NEVER,
       schema: Option[Schema] = None
-  ): ZIO[BQ, Throwable, Map[String, Long]] =
-    ZIO.environmentWithZIO(
-      _.get.loadTable(
-        sourcePath,
-        sourceFormat,
-        destinationProject,
-        destinationDataset,
-        destinationTable,
-        writeDisposition,
-        createDisposition,
-        schema
-      )
+  ): RIO[BQ, Map[String, Long]] = ZIO.environmentWithZIO(
+    _.get.loadTable(
+      sourcePath,
+      sourceFormat,
+      destinationProject,
+      destinationDataset,
+      destinationTable,
+      writeDisposition,
+      createDisposition,
+      schema
     )
+  )
+
   def loadPartitionedTable(
       sourcePathsPartitions: Seq[(String, String)],
       sourceFormat: BQInputType,
@@ -94,20 +132,20 @@ object BQ {
       createDisposition: JobInfo.CreateDisposition,
       schema: Option[Schema],
       parallelism: Int
-  ): ZIO[BQ, Throwable, Map[String, Long]] =
-    ZIO.environmentWithZIO(
-      _.get.loadPartitionedTable(
-        sourcePathsPartitions,
-        sourceFormat,
-        destinationProject,
-        destinationDataset,
-        destinationTable,
-        writeDisposition,
-        createDisposition,
-        schema,
-        parallelism
-      )
+  ): RIO[BQ, Map[String, Long]] = ZIO.environmentWithZIO(
+    _.get.loadPartitionedTable(
+      sourcePathsPartitions,
+      sourceFormat,
+      destinationProject,
+      destinationDataset,
+      destinationTable,
+      writeDisposition,
+      createDisposition,
+      schema,
+      parallelism
     )
+  )
+
   def exportTable(
       sourceDataset: String,
       sourceTable: String,
@@ -116,17 +154,16 @@ object BQ {
       destinationFileName: Option[String],
       destinationFormat: BQInputType,
       destinationCompressionType: String = "gzip"
-  ): ZIO[BQ, Throwable, Unit] =
-    ZIO.environmentWithZIO(
-      _.get.exportTable(
-        sourceDataset,
-        sourceTable,
-        sourceProject,
-        destinationPath,
-        destinationFileName,
-        destinationFormat,
-        destinationCompressionType
-      )
+  ): RIO[BQ, Unit] = ZIO.environmentWithZIO(
+    _.get.exportTable(
+      sourceDataset,
+      sourceTable,
+      sourceProject,
+      destinationPath,
+      destinationFileName,
+      destinationFormat,
+      destinationCompressionType
     )
+  )
   def live(credentials: Option[String] = None): TaskLayer[BQ] = ZLayer.fromZIO(BQClient(credentials).map(bq => BQImpl(bq)))
 }

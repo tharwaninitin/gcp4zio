@@ -1,5 +1,5 @@
-import sbtrelease._
 import sbtrelease.ReleaseStateTransformations._
+import sbtrelease._
 
 def setReleaseVersionFunction(compatibilityIntention: Compatibility): String => String = {
   val maybeBump = compatibilityIntention match {
@@ -45,9 +45,9 @@ releaseNextVersion := { ver =>
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
   inquireVersions,
-  setReleaseVersion,                              // Update current release version in version.sbt
-  releaseStepCommand("versionPolicyCheck"),       // Run task `versionPolicyCheck` after the release version is set
-  releaseStepTask(setNextCompatibilityIntention), // Reset compatibility intention to `Compatibility.BinaryAndSourceCompatible`
-  releaseStepCommandAndRemaining("+publish"),
-  setNextVersion // Update future release version in version.sbt
+  setReleaseVersion, // Update current release version in version.sbt
+  // releaseStepCommand("versionPolicyCheck"),       // Run task `versionPolicyCheck` after the release version is set
+  // releaseStepTask(setNextCompatibilityIntention), // Reset compatibility intention to `Compatibility.BinaryAndSourceCompatible`
+  releaseStepCommandAndRemaining("+publish")
+  // setNextVersion // Update future release version in version.sbt
 )

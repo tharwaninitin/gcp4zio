@@ -7,27 +7,27 @@ import zio.ZIO
 import zio.test.Assertion.equalTo
 import zio.test.{assertZIO, suite, test, Spec, TestAspect}
 
-object BQStepsTestSuite {
+object BQLoadExportTestSuite {
   case class RatingCSV(userId: Long, movieId: Long, rating: Double, timestamp: Long)
 
-  // STEP 1: Define step
+  // Define variables
   private val inputFileParquet = s"gs://$gcsBucket/temp/ratings.parquet"
   private val inputFileCsv     = s"gs://$gcsBucket/temp/ratings.csv"
   private val bqExportDestPath = s"gs://$gcsBucket/temp/etlflow/"
   private val outputTable      = "ratings"
   private val outputDataset    = "dev"
 
-  val spec: Spec[BQ, Any] = suite("BQ Steps")(
-    test("Execute BQLoad PARQUET step") {
+  val spec: Spec[BQ, Any] = suite("BQ Load/Export API")(
+    test("Execute BQLoad PARQUET") {
       val step = BQ.loadTable(inputFileParquet, PARQUET, Some(gcpProject), outputDataset, outputTable)
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
-    test("Execute BQLoad CSV step") {
+    test("Execute BQLoad CSV") {
       val schema: Option[Schema] = Encoder[RatingCSV]
       val step = BQ.loadTable(inputFileCsv, CSV(), Some(gcpProject), outputDataset, outputTable, schema = schema)
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
-    test("Execute BQExport CSV step") {
+    test("Execute BQExport CSV") {
       val step = BQ.exportTable(
         outputDataset,
         outputTable,
@@ -38,7 +38,7 @@ object BQStepsTestSuite {
       )
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
-    test("Execute BQExport PARQUET step") {
+    test("Execute BQExport PARQUET") {
       val step = BQ.exportTable(
         outputDataset,
         outputTable,

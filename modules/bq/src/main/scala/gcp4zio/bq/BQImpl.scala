@@ -31,6 +31,11 @@ case class BQImpl(client: BigQuery) extends BQ {
     case _ => FormatOptions.parquet
   }
 
+  /** Execute SQL query on BigQuery, this API does not returns any data. So it can be used to run any DML/DDL queries
+    * @param query
+    *   SQL query(INSERT, CREATE) to execute
+    * @return
+    */
   def executeQuery(query: String): Task[Unit] = ZIO.attempt {
     val queryConfig: QueryJobConfiguration = QueryJobConfiguration
       .newBuilder(query)
@@ -59,7 +64,16 @@ case class BQImpl(client: BigQuery) extends BQ {
     }
   }
 
-  def getData(query: String): Task[Iterable[FieldValueList]] = ZIO.attempt {
+  /** Execute SQL query on BigQuery, this API returns rows. So it can be used to run any SELECT queries
+    * @param query
+    *   SQL query(SELECT) to execute
+    * @param fn
+    *   function to convert FieldValueList to Scala Type T
+    * @tparam T
+    *   Scala Class for output rows
+    * @return
+    */
+  def getData[T](query: String)(fn: FieldValueList => T): Task[Iterable[T]] = ZIO.attempt {
     val queryConfig: QueryJobConfiguration = QueryJobConfiguration
       .newBuilder(query)
       .setUseLegacySql(false)
@@ -72,7 +86,7 @@ case class BQImpl(client: BigQuery) extends BQ {
     val job = queryJob.waitFor()
 
     val result: TableResult = job.getQueryResults()
-    result.iterateAll().asScala
+    result.iterateAll().asScala.map(fn)
   }
 
   def loadTableFromLocalFile(
