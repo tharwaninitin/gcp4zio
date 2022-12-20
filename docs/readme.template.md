@@ -150,12 +150,14 @@ job.provide(DPJob.live("dpEndpoint"))
 import gcp4zio.bq._
 
 // Execute DML/DDL query on Bigquery
-val task1: RIO[BQ, Unit] = BQ.executeQuery("CREATE TABLE test (column1 STRING)")
+val task1: RIO[BQ, Unit] = BQ.executeQuery("CREATE TABLE dataset1.test1 (column1 STRING)")
+
+val task2: RIO[BQ, Unit] = BQ.executeQuery(""" INSERT INTO dataset1.test1 VALUES ("value1") """)
 
 // Execute SELECT query on Bigquery
-val task2: RIO[BQ, Iterable[String]] = BQ.getData("SELECT * FROM test")(rs => rs.get("column1").getStringValue)
+val task3: RIO[BQ, Iterable[String]] = BQ.getData("SELECT * FROM dataset1.test1")(rs => rs.get("column1").getStringValue)
 
-(task1 *> task2).provide(BQ.live())
+(task1 *> task2 *> task3).provide(BQ.live())
 ```  
 ### Loading/Exporting data from/to GCS
 ```scala mdoc:silent
