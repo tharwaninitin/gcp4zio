@@ -160,7 +160,7 @@ val task2: RIO[BQ, Iterable[String]] = BQ.getData("SELECT * FROM test")(rs => rs
 ### Loading/Exporting data from/to GCS
 ```scala mdoc:silent
 import gcp4zio.bq._
-import gcp4zio.bq.BQInputType.PARQUET
+import gcp4zio.bq.FileType.PARQUET
 
 // Load PARQUET file into Bigquery
 val step = BQ.loadTable("inputFilePathParquet", PARQUET, Some("gcpProject"), "outputDataset", "outputTable")

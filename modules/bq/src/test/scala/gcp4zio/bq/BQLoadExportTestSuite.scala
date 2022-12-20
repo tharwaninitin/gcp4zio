@@ -2,7 +2,7 @@ package gcp4zio.bq
 
 import com.google.cloud.bigquery.Schema
 import gcp4zio.Global.{gcpProject, gcsBucket}
-import gcp4zio.bq.BQInputType.{CSV, PARQUET}
+import gcp4zio.bq.FileType.{CSV, PARQUET}
 import zio.ZIO
 import zio.test.Assertion.equalTo
 import zio.test.{assertZIO, suite, test, Spec, TestAspect}
@@ -18,34 +18,34 @@ object BQLoadExportTestSuite {
   private val outputDataset    = "dev"
 
   val spec: Spec[BQ, Any] = suite("BQ Load/Export API")(
-    test("Execute BQLoad PARQUET") {
+    test("Run BQLoad PARQUET") {
       val step = BQ.loadTable(inputFileParquet, PARQUET, Some(gcpProject), outputDataset, outputTable)
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
-    test("Execute BQLoad CSV") {
+    test("Run BQLoad CSV") {
       val schema: Option[Schema] = Encoder[RatingCSV]
       val step = BQ.loadTable(inputFileCsv, CSV(), Some(gcpProject), outputDataset, outputTable, schema = schema)
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
-    test("Execute BQExport CSV") {
+    test("Run BQExport CSV") {
       val step = BQ.exportTable(
         outputDataset,
         outputTable,
         Some(gcpProject),
         bqExportDestPath,
-        Some("sample.csv"),
-        CSV()
+        CSV(),
+        Some("sample.csv")
       )
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
-    test("Execute BQExport PARQUET") {
+    test("Run BQExport PARQUET") {
       val step = BQ.exportTable(
         outputDataset,
         outputTable,
         Some(gcpProject),
         bqExportDestPath,
-        Some("sample.parquet"),
         PARQUET,
+        Some("sample.parquet"),
         "snappy"
       )
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
