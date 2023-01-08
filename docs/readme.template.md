@@ -125,10 +125,12 @@ import gcp4zio.dp._
 // Create Dataproc Cluster Properties
 val dpProps = ClusterProps(bucketName = "dpLogBucket")
 // Create Dataproc Cluster
-DPCluster.createDataproc("dpCluster", "gcpProject", "gcpRegion", dpProps)
+val createTask = DPCluster.createDataproc("dpCluster", dpProps)
 
 // Delete Dataproc Cluster
-DPCluster.deleteDataproc("dpCluster", "gcpProject", "gcpRegion")
+val deleteTask = DPCluster.deleteDataproc("dpCluster")
+
+(createTask *> deleteTask).provide(DPCluster.live("gcpProject", "gcpRegion", "dpEndpoint"))
 ```  
 
 ### Dataproc Job
@@ -139,9 +141,9 @@ val libs = List("file:///usr/lib/spark/examples/jars/spark-examples.jar")
 val conf = Map("spark.executor.memory" -> "1g", "spark.driver.memory" -> "1g")
 val mainClass = "org.apache.spark.examples.SparkPi"
 
-val job = DPJob.executeSparkJob(List("1000"), "mainClass", libs, conf, "dpCluster", "gcpProject", "gcpRegion")
+val job = DPJob.executeSparkJob(List("1000"), "mainClass", libs, conf)
 
-job.provide(DPJob.live("dpEndpoint"))
+job.provide(DPJob.live("dpCluster", "gcpProject", "gcpRegion", "dpEndpoint"))
 ```  
 
 ## Bigquery API

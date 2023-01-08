@@ -21,11 +21,11 @@ This project is compiled with scala versions 2.12.17, 2.13.10, 3.2.1
 __SBT__
 ``` scala mdoc
 libraryDependencies ++= List(
-      "com.github.tharwaninitin" %% "gcp4zio-gcs" % "1.3.0",
-      "com.github.tharwaninitin" %% "gcp4zio-dp"  % "1.3.0",
-      "com.github.tharwaninitin" %% "gcp4zio-bq"  % "1.3.0",
-      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % "1.3.0",
-      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % "1.3.0"
+      "com.github.tharwaninitin" %% "gcp4zio-gcs" % "1.4.0",
+      "com.github.tharwaninitin" %% "gcp4zio-dp"  % "1.4.0",
+      "com.github.tharwaninitin" %% "gcp4zio-bq"  % "1.4.0",
+      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % "1.4.0",
+      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % "1.4.0"
    )
 ```
 __Maven__
@@ -33,7 +33,7 @@ __Maven__
 <dependency>
     <groupId>com.github.tharwaninitin</groupId>
     <artifactId>gcp4zio-gcs_2.12</artifactId>
-    <version>1.3.0</version>
+    <version>1.4.0</version>
 </dependency>
 ```
 # GCP4ZIO API's
@@ -125,10 +125,12 @@ import gcp4zio.dp._
 // Create Dataproc Cluster Properties
 val dpProps = ClusterProps(bucketName = "dpLogBucket")
 // Create Dataproc Cluster
-DPCluster.createDataproc("dpCluster", "gcpProject", "gcpRegion", dpProps)
+val createTask = DPCluster.createDataproc("dpCluster", dpProps)
 
 // Delete Dataproc Cluster
-DPCluster.deleteDataproc("dpCluster", "gcpProject", "gcpRegion")
+val deleteTask = DPCluster.deleteDataproc("dpCluster")
+
+(createTask *> deleteTask).provide(DPCluster.live("gcpProject", "gcpRegion", "dpEndpoint"))
 ```  
 
 ### Dataproc Job
@@ -139,9 +141,9 @@ val libs = List("file:///usr/lib/spark/examples/jars/spark-examples.jar")
 val conf = Map("spark.executor.memory" -> "1g", "spark.driver.memory" -> "1g")
 val mainClass = "org.apache.spark.examples.SparkPi"
 
-val job = DPJob.executeSparkJob(List("1000"), "mainClass", libs, conf, "dpCluster", "gcpProject", "gcpRegion")
+val job = DPJob.executeSparkJob(List("1000"), "mainClass", libs, conf)
 
-job.provide(DPJob.live("dpEndpoint"))
+job.provide(DPJob.live("dpCluster", "gcpProject", "gcpRegion", "dpEndpoint"))
 ```  
 
 ## Bigquery API

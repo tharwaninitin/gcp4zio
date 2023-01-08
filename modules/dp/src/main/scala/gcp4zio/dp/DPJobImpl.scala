@@ -7,7 +7,7 @@ import zio.{Duration, Schedule, Task, ZIO}
 import scala.jdk.CollectionConverters._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-case class DPJobImpl(client: JobControllerClient) extends DPJob {
+case class DPJobImpl(client: JobControllerClient, cluster: String, project: String, region: String) extends DPJob {
 
   private val recurWhile: Schedule[Any, Job, Job] = Schedule.recurWhile[Job] {
     case job if job.getStatus.getState.name() == "CANCELLED" || job.getStatus.getState.name() == "ERROR" =>
@@ -22,7 +22,7 @@ case class DPJobImpl(client: JobControllerClient) extends DPJob {
         ZIO.succeed(logger.info(s"Progress Check #${out._2 + 1}, JOB_STATE => ${out._1.getStatus.getState.name()} "))
     }
 
-  def trackJobProgress(project: String, region: String, job: Job, interval: Duration): Task[Unit] = {
+  def trackJobProgress(job: Job, interval: Duration): Task[Unit] = {
     val jobId = job.getJobUuid
     logger.info(s"Started tracking progress for job $jobId")
     ZIO
@@ -44,39 +44,32 @@ case class DPJobImpl(client: JobControllerClient) extends DPJob {
       )
   }
 
-  def submitSparkJob(
-      args: List[String],
-      mainClass: String,
-      libs: List[String],
-      conf: Map[String, String],
-      cluster: String,
-      project: String,
-      region: String
-  ): Task[Job] = ZIO.attempt {
-    logger.info(s"""Submitting spark job on dataproc with below configurations:
-                   |region => $region
-                   |project => $project
-                   |cluster => $cluster
-                   |mainClass => $mainClass
-                   |args => $args
-                   |conf => $conf
-                   |libs => ${libs.mkString(",")}""".stripMargin)
+  def submitSparkJob(args: List[String], mainClass: String, libs: List[String], conf: Map[String, String]): Task[Job] =
+    ZIO.attempt {
+      logger.info(s"""Submitting spark job on dataproc with below configurations:
+                     |region => $region
+                     |project => $project
+                     |cluster => $cluster
+                     |mainClass => $mainClass
+                     |args => $args
+                     |conf => $conf
+                     |libs => ${libs.mkString(",")}""".stripMargin)
 
-    val jobPlacement = JobPlacement.newBuilder().setClusterName(cluster).build()
-    val sparkJob = SparkJob
-      .newBuilder()
-      .addAllJarFileUris(libs.asJava)
-      .putAllProperties(conf.asJava)
-      .setMainClass(mainClass)
-      .addAllArgs(args.asJava)
-      .build()
-    val jobRequest: Job = Job.newBuilder().setPlacement(jobPlacement).setSparkJob(sparkJob).build()
-    val jobResponse     = client.submitJob(project, region, jobRequest)
-    logger.info(s"Spark job submitted successfully with JobId ${jobResponse.getJobUuid}")
-    jobResponse
-  }
+      val jobPlacement = JobPlacement.newBuilder().setClusterName(cluster).build()
+      val sparkJob = SparkJob
+        .newBuilder()
+        .addAllJarFileUris(libs.asJava)
+        .putAllProperties(conf.asJava)
+        .setMainClass(mainClass)
+        .addAllArgs(args.asJava)
+        .build()
+      val jobRequest: Job = Job.newBuilder().setPlacement(jobPlacement).setSparkJob(sparkJob).build()
+      val jobResponse     = client.submitJob(project, region, jobRequest)
+      logger.info(s"Spark job submitted successfully with JobId ${jobResponse.getJobUuid}")
+      jobResponse
+    }
 
-  def submitHiveJob(query: String, cluster: String, project: String, region: String): Task[Job] = ZIO.attempt {
+  def submitHiveJob(query: String): Task[Job] = ZIO.attempt {
     logger.info(s"""Submitting hive job on dataproc with below configurations:
                    |region => $region
                    |project => $project
