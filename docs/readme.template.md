@@ -130,7 +130,7 @@ val createTask = DPCluster.createDataproc("dpCluster", dpProps)
 // Delete Dataproc Cluster
 val deleteTask = DPCluster.deleteDataproc("dpCluster")
 
-(createTask *> deleteTask).provide(DPJob.live("gcpProject", "gcpRegion", "dpEndpoint"))
+(createTask *> deleteTask).provide(DPCluster.live("gcpProject", "gcpRegion", "dpEndpoint"))
 ```  
 
 ### Dataproc Job
