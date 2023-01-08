@@ -40,14 +40,14 @@ object DPGCS extends ZIOAppDefault with ApplicationLogger {
   private val mainClass = "org.apache.spark.examples.SparkPi"
 
   private val program1 = DPJob
-    .executeSparkJob(List("1000"), mainClass, libs, conf, dpCluster, gcpProject, gcpRegion)
+    .executeSparkJob(List("1000"), mainClass, libs, conf)
     .flatMap(printGcsLogs)
 
   private val program2 = for {
-    job <- DPJob.submitHiveJob("SELE 1 AS ONE", dpCluster, gcpProject, gcpRegion)
-    _   <- DPJob.trackJobProgress(gcpProject, gcpRegion, job).tapError(_ => printGcsLogs(job))
+    job <- DPJob.submitHiveJob("SELE 1 AS ONE")
+    _   <- DPJob.trackJobProgress(job).tapError(_ => printGcsLogs(job))
     _   <- printGcsLogs(job)
   } yield ()
 
-  val run: Task[Unit] = (program1 *> program2).provide(DPJob.live(dpEndpoint) ++ GCS.live())
+  val run: Task[Unit] = (program1 *> program2).provide(DPJob.live(dpCluster, gcpProject, gcpRegion, dpEndpoint) ++ GCS.live())
 }

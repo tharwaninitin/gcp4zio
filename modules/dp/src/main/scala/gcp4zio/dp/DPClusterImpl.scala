@@ -6,9 +6,9 @@ import com.google.protobuf.Duration
 import zio.{Task, ZIO}
 import scala.jdk.CollectionConverters._
 
-case class DPClusterImpl(client: ClusterControllerClient) extends DPCluster {
+case class DPClusterImpl(client: ClusterControllerClient, project: String, region: String) extends DPCluster {
 
-  def createDataproc(clusterName: String, project: String, region: String, props: ClusterProps): Task[Cluster] = ZIO
+  def createDataproc(clusterName: String, props: ClusterProps): Task[Cluster] = ZIO
     .fromFutureJava {
       val endPointConfig = EndpointConfig.newBuilder().setEnableHttpPortAccess(true)
       val softwareConfig = SoftwareConfig.newBuilder().setImageVersion(props.imageVersion)
@@ -84,14 +84,14 @@ case class DPClusterImpl(client: ClusterControllerClient) extends DPCluster {
       res => ZIO.succeed(logger.info(s"Cluster ${res.getClusterName} created successfully"))
     )
 
-  def deleteDataproc(cluster: String, project: String, region: String): Task[Unit] = ZIO
+  def deleteDataproc(clusterName: String): Task[Unit] = ZIO
     .fromFutureJava {
-      logger.info(s"Submitting cluster deletion request for $cluster")
-      client.deleteClusterAsync(project, region, cluster)
+      logger.info(s"Submitting cluster deletion request for $clusterName")
+      client.deleteClusterAsync(project, region, clusterName)
     }
     .tapBoth(
       e => ZIO.succeed(logger.error(s"Cluster deletion failed with error ${e.getMessage}")),
-      _ => ZIO.succeed(logger.info(s"Cluster $cluster deleted successfully"))
+      _ => ZIO.succeed(logger.info(s"Cluster $clusterName deleted successfully"))
     )
     .unit
 }

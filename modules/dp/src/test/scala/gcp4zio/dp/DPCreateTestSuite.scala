@@ -14,7 +14,7 @@ object DPCreateTestSuite {
         networkTags = dpNetworkTags,
         serviceAccount = dpServiceAccount
       )
-      val step = DPCluster.createDataproc(dpCluster, gcpProject, gcpRegion, dpProps)
+      val step = DPCluster.createDataproc(dpCluster, dpProps)
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     }
 }
