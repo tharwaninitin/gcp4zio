@@ -1,7 +1,7 @@
 package gcp4zio
 package bq
 
-import com.google.cloud.bigquery.{FieldValueList, JobInfo, Schema}
+import com.google.cloud.bigquery.{FieldValueList, Job, JobInfo, Schema}
 import zio.{RIO, Task, TaskLayer, ZIO, ZLayer}
 
 trait BQ {
@@ -11,9 +11,9 @@ trait BQ {
     *   SQL query(INSERT, CREATE) to execute
     * @return
     */
-  def executeQuery(query: String): Task[Unit]
+  def executeQuery(query: String): Task[Job]
 
-  /** Execute SQL query on BigQuery, this API returns rows. So it can be used to run any SELECT queries
+  /** This API can be used to run any SQL(SELECT) query on BigQuery to fetch rows
     * @param query
     *   SQL query(SELECT) to execute
     * @param fn
@@ -22,7 +22,7 @@ trait BQ {
     *   Scala Type for output rows
     * @return
     */
-  def getData[T](query: String)(fn: FieldValueList => T): Task[Iterable[T]]
+  def fetchResults[T](query: String)(fn: FieldValueList => T): Task[Iterable[T]]
 
   /** Load data into BigQuery from GCS
     * @param sourcePath
@@ -89,9 +89,9 @@ object BQ {
     *   SQL query(INSERT, CREATE) to execute
     * @return
     */
-  def executeQuery(query: String): RIO[BQ, Unit] = ZIO.environmentWithZIO(_.get.executeQuery(query))
+  def executeQuery(query: String): RIO[BQ, Job] = ZIO.environmentWithZIO(_.get.executeQuery(query))
 
-  /** Execute SQL query on BigQuery, this API returns rows. So it can be used to run any SELECT queries
+  /** This API can be used to run any SQL(SELECT) query on BigQuery to fetch rows
     * @param query
     *   SQL query(SELECT) to execute
     * @param fn
@@ -100,8 +100,8 @@ object BQ {
     *   Scala Type for output rows
     * @return
     */
-  def getData[T](query: String)(fn: FieldValueList => T): RIO[BQ, Iterable[T]] =
-    ZIO.environmentWithZIO(_.get.getData[T](query)(fn))
+  def fetchResults[T](query: String)(fn: FieldValueList => T): RIO[BQ, Iterable[T]] =
+    ZIO.environmentWithZIO(_.get.fetchResults[T](query)(fn))
 
   /** Load data into BigQuery from GCS
     * @param sourcePath

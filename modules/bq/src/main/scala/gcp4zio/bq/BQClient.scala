@@ -22,14 +22,14 @@ object BQClient {
     val envPath: String = sys.env.getOrElse("GOOGLE_APPLICATION_CREDENTIALS", "NOT_SET_IN_ENV")
     path match {
       case Some(p) =>
-        logger.info("Using GCP credentials from values passed in function")
+        logger.info("Using credentials from values passed in function for BigQuery Client")
         getBQ(p)
       case None =>
         if (envPath == "NOT_SET_IN_ENV") {
-          logger.info("Using GCP credentials from local sdk")
+          logger.info("Using credentials from local sdk for BigQuery Client")
           BigQueryOptions.getDefaultInstance.getService
         } else {
-          logger.info("Using GCP credentials from environment variable GOOGLE_APPLICATION_CREDENTIALS")
+          logger.info("Using credentials from GOOGLE_APPLICATION_CREDENTIALS for BigQuery Client")
           getBQ(envPath)
         }
     }

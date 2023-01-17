@@ -152,12 +152,12 @@ job.provide(DPJob.live("dpCluster", "gcpProject", "gcpRegion", "dpEndpoint"))
 import gcp4zio.bq._
 
 // Execute DML/DDL query on Bigquery
-val task1: RIO[BQ, Unit] = BQ.executeQuery("CREATE TABLE dataset1.test1 (column1 STRING)")
+val task1: RIO[BQ, Unit] = BQ.executeQuery("CREATE TABLE dataset1.test1 (column1 STRING)").unit
 
-val task2: RIO[BQ, Unit] = BQ.executeQuery(""" INSERT INTO dataset1.test1 VALUES ("value1") """)
+val task2: RIO[BQ, Unit] = BQ.executeQuery(""" INSERT INTO dataset1.test1 VALUES ("value1") """).unit
 
-// Execute SELECT query on Bigquery
-val task3: RIO[BQ, Iterable[String]] = BQ.getData("SELECT * FROM dataset1.test1")(rs => rs.get("column1").getStringValue)
+// Fetching data from Bigquery
+val task3: RIO[BQ, Iterable[String]] = BQ.fetchResults("SELECT * FROM dataset1.test1")(rs => rs.get("column1").getStringValue)
 
 (task1 *> task2 *> task3).provide(BQ.live())
 ```  

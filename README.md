@@ -21,11 +21,11 @@ This project is compiled with scala versions 2.12.17, 2.13.10, 3.2.1
 __SBT__
 ``` scala mdoc
 libraryDependencies ++= List(
-      "com.github.tharwaninitin" %% "gcp4zio-gcs" % "1.4.0",
-      "com.github.tharwaninitin" %% "gcp4zio-dp"  % "1.4.0",
-      "com.github.tharwaninitin" %% "gcp4zio-bq"  % "1.4.0",
-      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % "1.4.0",
-      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % "1.4.0"
+      "com.github.tharwaninitin" %% "gcp4zio-gcs" % "1.4.1",
+      "com.github.tharwaninitin" %% "gcp4zio-dp"  % "1.4.1",
+      "com.github.tharwaninitin" %% "gcp4zio-bq"  % "1.4.1",
+      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % "1.4.1",
+      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % "1.4.1"
    )
 ```
 __Maven__
@@ -33,7 +33,7 @@ __Maven__
 <dependency>
     <groupId>com.github.tharwaninitin</groupId>
     <artifactId>gcp4zio-gcs_2.12</artifactId>
-    <version>1.4.0</version>
+    <version>1.4.1</version>
 </dependency>
 ```
 # GCP4ZIO API's
@@ -152,12 +152,12 @@ job.provide(DPJob.live("dpCluster", "gcpProject", "gcpRegion", "dpEndpoint"))
 import gcp4zio.bq._
 
 // Execute DML/DDL query on Bigquery
-val task1: RIO[BQ, Unit] = BQ.executeQuery("CREATE TABLE dataset1.test1 (column1 STRING)")
+val task1: RIO[BQ, Unit] = BQ.executeQuery("CREATE TABLE dataset1.test1 (column1 STRING)").unit
 
-val task2: RIO[BQ, Unit] = BQ.executeQuery(""" INSERT INTO dataset1.test1 VALUES ("value1") """)
+val task2: RIO[BQ, Unit] = BQ.executeQuery(""" INSERT INTO dataset1.test1 VALUES ("value1") """).unit
 
-// Execute SELECT query on Bigquery
-val task3: RIO[BQ, Iterable[String]] = BQ.getData("SELECT * FROM dataset1.test1")(rs => rs.get("column1").getStringValue)
+// Fetching data from Bigquery
+val task3: RIO[BQ, Iterable[String]] = BQ.fetchResults("SELECT * FROM dataset1.test1")(rs => rs.get("column1").getStringValue)
 
 (task1 *> task2 *> task3).provide(BQ.live())
 ```  

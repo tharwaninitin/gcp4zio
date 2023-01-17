@@ -33,14 +33,14 @@ object GCSClient {
 
     path match {
       case Some(p) =>
-        logger.info("Using GCP credentials from values passed in function")
+        logger.info("Using credentials from values passed in function for GCS Client")
         getStorage(p)
       case None =>
         if (envPath == "NOT_SET_IN_ENV") {
-          logger.info("Using GCP credentials from local sdk")
+          logger.info("Using credentials from local sdk for GCS Client")
           StorageOptions.newBuilder().build().getService
         } else {
-          logger.info("Using GCP credentials from environment variable GOOGLE_APPLICATION_CREDENTIALS")
+          logger.info("Using credentials from GOOGLE_APPLICATION_CREDENTIALS for GCS Client")
           getStorage(envPath)
         }
     }
