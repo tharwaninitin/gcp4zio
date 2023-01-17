@@ -14,7 +14,7 @@ object BQQueryTestSuite {
     },
     test("Execute BQ Query and get data") {
       val task =
-        BQ.getData("SELECT * FROM dev.ratings")(rs =>
+        BQ.fetchResults("SELECT * FROM dev.ratings")(rs =>
           Rating(
             rs.get("userId").getLongValue,
             rs.get("movieId").getLongValue,

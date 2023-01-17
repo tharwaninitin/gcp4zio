@@ -35,7 +35,7 @@ case class BQImpl(client: BigQuery) extends BQ {
     *   SQL query(INSERT, CREATE) to execute
     * @return
     */
-  def executeQuery(query: String): Task[Unit] = ZIO.attempt {
+  def executeQuery(query: String): Task[Job] = ZIO.attempt {
     val queryConfig: QueryJobConfiguration = QueryJobConfiguration
       .newBuilder(query)
       .setUseLegacySql(false)
@@ -57,13 +57,14 @@ case class BQImpl(client: BigQuery) extends BQ {
       logger.error(queryJob.getStatus.getState.toString)
       throw new RuntimeException(s"Error ${queryJob.getStatus.getError.getMessage}")
     } else {
-      logger.info(s"Job State: ${queryJob.getStatus.getState}")
+      logger.info(s"Executed query successfully")
+      queryJob
       // val stats = queryJob.getStatistics.asInstanceOf[QueryStatistics]
       // query_logger.info(s"Query Plan : ${stats.getQueryPlan}")
     }
   }
 
-  /** Execute SQL query on BigQuery, this API returns rows. So it can be used to run any SELECT queries
+  /** This API can be used to run any SQL(SELECT) query on BigQuery to fetch rows
     * @param query
     *   SQL query(SELECT) to execute
     * @param fn
@@ -72,7 +73,7 @@ case class BQImpl(client: BigQuery) extends BQ {
     *   Scala Type for output rows
     * @return
     */
-  def getData[T](query: String)(fn: FieldValueList => T): Task[Iterable[T]] = ZIO.attempt {
+  def fetchResults[T](query: String)(fn: FieldValueList => T): Task[Iterable[T]] = ZIO.attempt {
     val queryConfig: QueryJobConfiguration = QueryJobConfiguration
       .newBuilder(query)
       .setUseLegacySql(false)

@@ -14,8 +14,10 @@ object DPClusterClient {
     */
   def apply(endpoint: String): RIO[Scope, ClusterControllerClient] = ZIO.fromAutoCloseable(ZIO.attempt {
     sys.env.get("GOOGLE_APPLICATION_CREDENTIALS") match {
-      case Some(_) => ClusterControllerClient.create(ClusterControllerSettings.newBuilder().setEndpoint(endpoint).build())
-      case None    => throw new RuntimeException("Set environment variable GOOGLE_APPLICATION_CREDENTIALS")
+      case Some(_) =>
+        logger.info("Using credentials from GOOGLE_APPLICATION_CREDENTIALS for Dataproc Cluster Client")
+        ClusterControllerClient.create(ClusterControllerSettings.newBuilder().setEndpoint(endpoint).build())
+      case None => throw new RuntimeException("Set environment variable GOOGLE_APPLICATION_CREDENTIALS")
     }
   })
 }
