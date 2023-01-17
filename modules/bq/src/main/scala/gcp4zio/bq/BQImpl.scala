@@ -59,8 +59,6 @@ case class BQImpl(client: BigQuery) extends BQ {
     } else {
       logger.info(s"Executed query successfully")
       queryJob
-      // val stats = queryJob.getStatistics.asInstanceOf[QueryStatistics]
-      // query_logger.info(s"Query Plan : ${stats.getQueryPlan}")
     }
   }
 
