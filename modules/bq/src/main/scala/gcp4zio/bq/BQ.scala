@@ -1,7 +1,7 @@
 package gcp4zio
 package bq
 
-import com.google.cloud.bigquery.{FieldValueList, Job, JobInfo, Schema}
+import com.google.cloud.bigquery._
 import zio.{RIO, Task, TaskLayer, ZIO, ZLayer}
 
 trait BQ {
@@ -46,12 +46,12 @@ trait BQ {
   def loadTable(
       sourcePath: String,
       sourceFormat: FileType,
-      targetProject: Option[String],
+      targetProject: scala.Option[String],
       targetDataset: String,
       targetTable: String,
       writeDisposition: JobInfo.WriteDisposition,
       createDisposition: JobInfo.CreateDisposition,
-      schema: Option[Schema] = None
+      schema: scala.Option[Schema] = None
   ): Task[Map[String, Long]]
 
   /** Export data from BigQuery to GCS
@@ -74,12 +74,14 @@ trait BQ {
   def exportTable(
       sourceDataset: String,
       sourceTable: String,
-      sourceProject: Option[String],
+      sourceProject: scala.Option[String],
       targetPath: String,
       targetFormat: FileType,
-      targetFileName: Option[String],
+      targetFileName: scala.Option[String],
       targetCompressionType: String = "gzip"
   ): Task[Unit]
+
+  def execute[T](f: BigQuery => T): Task[T]
 }
 
 object BQ {
@@ -125,12 +127,12 @@ object BQ {
   def loadTable(
       sourcePath: String,
       sourceFormat: FileType,
-      targetProject: Option[String],
+      targetProject: scala.Option[String],
       targetDataset: String,
       targetTable: String,
       writeDisposition: JobInfo.WriteDisposition = JobInfo.WriteDisposition.WRITE_TRUNCATE,
       createDisposition: JobInfo.CreateDisposition = JobInfo.CreateDisposition.CREATE_NEVER,
-      schema: Option[Schema] = None
+      schema: scala.Option[Schema] = None
   ): RIO[BQ, Map[String, Long]] = ZIO.environmentWithZIO(
     _.get.loadTable(
       sourcePath,
@@ -168,12 +170,12 @@ object BQ {
   def loadPartitionedTable(
       sourcePathsPartitions: Seq[(String, String)],
       sourceFormat: FileType,
-      targetProject: Option[String],
+      targetProject: scala.Option[String],
       targetDataset: String,
       targetTable: String,
       writeDisposition: JobInfo.WriteDisposition,
       createDisposition: JobInfo.CreateDisposition,
-      schema: Option[Schema],
+      schema: scala.Option[Schema],
       parallelism: Int
   ): RIO[BQ, Map[String, Long]] = ZIO
     .foreachPar(sourcePathsPartitions) { case (srcPath, partition) =>
@@ -211,10 +213,10 @@ object BQ {
   def exportTable(
       sourceDataset: String,
       sourceTable: String,
-      sourceProject: Option[String],
+      sourceProject: scala.Option[String],
       targetPath: String,
       targetFormat: FileType,
-      targetFileName: Option[String],
+      targetFileName: scala.Option[String],
       targetCompressionType: String = "gzip"
   ): RIO[BQ, Unit] = ZIO.environmentWithZIO(
     _.get.exportTable(
@@ -228,5 +230,5 @@ object BQ {
     )
   )
 
-  def live(credentials: Option[String] = None): TaskLayer[BQ] = ZLayer.fromZIO(BQClient(credentials).map(bq => BQImpl(bq)))
+  def live(credentials: scala.Option[String] = None): TaskLayer[BQ] = ZLayer.fromZIO(BQClient(credentials).map(bq => BQImpl(bq)))
 }

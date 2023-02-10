@@ -253,4 +253,6 @@ case class BQImpl(client: BigQuery) extends BQ {
       )
     }
   }
+
+  override def execute[T](f: BigQuery => T): Task[T] = ZIO.attempt(f(client))
 }
