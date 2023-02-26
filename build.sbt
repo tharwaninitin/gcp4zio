@@ -61,6 +61,15 @@ lazy val monitoring = (project in file("modules/monitoring"))
   .settings(commonSettings)
   .settings(name := "gcp4zio-monitoring", libraryDependencies ++= coreLibs ++ monitoringLibs ++ testLibs)
 
+lazy val examples = (project in file("examples"))
+  .settings(commonSettings)
+  .settings(
+    name           := "examples",
+    publish / skip := true,
+    libraryDependencies ++= List("ch.qos.logback" % "logback-classic" % LogbackVersion)
+  )
+  .dependsOn(dp, gcs, pubsub, batch)
+
 lazy val docs = project
   .in(file("modules/docs")) // important: it must not be docs/
   .dependsOn(bq, dp, gcs, pubsub, batch, monitoring)

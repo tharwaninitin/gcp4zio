@@ -113,6 +113,7 @@ case class BatchImpl(client: BatchServiceClient, project: String, region: String
 
   override def listJobs: Task[Iterable[Job]] = ZIO.attempt {
     val parent = s"projects/$project/locations/$region"
+    logger.info(s"Listing batch jobs under $parent")
     client.listJobs(parent).iterateAll().asScala
   }
 }
