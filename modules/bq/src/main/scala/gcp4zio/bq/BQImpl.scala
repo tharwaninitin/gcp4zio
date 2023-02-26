@@ -55,6 +55,7 @@ case class BQImpl(client: BigQuery) extends BQ {
       throw new RuntimeException("Job no longer exists")
     else if (queryJob.getStatus.getError != null) {
       logger.error(queryJob.getStatus.getState.toString)
+      logger.info(s"EmailId: ${queryJob.getUserEmail}")
       throw new RuntimeException(s"Error ${queryJob.getStatus.getError.getMessage}")
     } else {
       logger.info(s"Executed query successfully")
