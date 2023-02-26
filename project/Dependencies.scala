@@ -30,6 +30,10 @@ object Dependencies {
     "com.google.cloud" % "google-cloud-monitoring" % CloudMonitorVersion
   )
 
+  lazy val batchLibs = List(
+    "com.google.cloud" % "google-cloud-batch" % BatchVersion
+  )
+
   lazy val testLibs = List(
     "dev.zio"       %% "zio-test"        % ZioVersion,
     "dev.zio"       %% "zio-test-sbt"    % ZioVersion,

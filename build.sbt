@@ -35,7 +35,7 @@ lazy val gcp4zio = (project in file("."))
     crossScalaVersions := Nil, // crossScalaVersions must be set to Nil on the aggregating project
     publish / skip     := true
   )
-  .aggregate(bq, dp, gcs, pubsub, monitoring)
+  .aggregate(bq, dp, gcs, pubsub, batch, monitoring)
 
 lazy val bq = (project in file("modules/bq"))
   .settings(commonSettings)
@@ -53,13 +53,17 @@ lazy val pubsub = (project in file("modules/pubsub"))
   .settings(commonSettings)
   .settings(name := "gcp4zio-pubsub", libraryDependencies ++= coreLibs ++ pubSubLibs ++ testLibs)
 
+lazy val batch = (project in file("modules/batch"))
+  .settings(commonSettings)
+  .settings(name := "gcp4zio-batch", libraryDependencies ++= coreLibs ++ batchLibs ++ testLibs)
+
 lazy val monitoring = (project in file("modules/monitoring"))
   .settings(commonSettings)
   .settings(name := "gcp4zio-monitoring", libraryDependencies ++= coreLibs ++ monitoringLibs ++ testLibs)
 
 lazy val docs = project
   .in(file("modules/docs")) // important: it must not be docs/
-  .dependsOn(bq, dp, gcs, pubsub, monitoring)
+  .dependsOn(bq, dp, gcs, pubsub, batch, monitoring)
   .settings(
     name           := "gcp4zio-docs",
     publish / skip := true,
