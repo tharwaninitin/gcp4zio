@@ -10,6 +10,8 @@ export TOPIC=testtopic
 export NON_EXISTING_TOPIC=notopic
 export SUBSCRIPTION=testsub
 export SUBSCRIPTION_2=testsub2
+export MEMBER=test@serviceaccount.com
+export ROLE=roles/pubsub.publisher
 $(gcloud beta emulators pubsub env-init)
 sbt "project pubsub; test"
 ```
