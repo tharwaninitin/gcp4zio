@@ -180,6 +180,9 @@ import gcp4zio.pubsub.topic._
 // Create PubSub Topic
 PSTopic.createTopic(project = "gcsProjectId", topic = "topicName")
 
+// Add IAM Policy Binding to existing Topic, where you grant basic pubsub role to a member  
+PSTopic.addIAMPolicyBindingToTopic(project = "gcsProjectId", topic = "topicName", member = "example@principalAccount.com", role = "roles/<IAM_Role>")
+
 // Delete PubSub Topic
 PSTopic.deleteTopic(project = "gcsProjectId", topic = "topicName")
 ```
