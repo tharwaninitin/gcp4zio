@@ -1,19 +1,20 @@
 object Versions {
-  val Scala212         = "2.12.17"
-  val Scala213         = "2.13.10"
-  val Scala3           = "3.2.1"
-  val AllScalaVersions = List(Scala212, Scala213, Scala3)
+  val scala212 = "2.12.17"
+  val scala213 = "2.13.10"
+  val scala3   = "3.2.1"
 
-  val ScalaJavaCollectionCompat = "2.10.0"
+  val allScalaVersions: List[String] = List(scala212, scala213, scala3)
 
-  val ZioVersion    = "2.0.13"
-  val ZioLogVersion = "2.1.12"
+  val scalaJavaCollectionCompat = "2.10.0"
 
-  val LogbackVersion      = "1.4.7"
-  val GcpBqVersion        = "2.25.0"
-  val GcpDpVersion        = "4.13.0"
-  val GcpGcsVersion       = "2.22.1"
-  val GcpPubSubVersion    = "1.123.11"
-  val CloudMonitorVersion = "3.17.0"
-  val BatchVersion        = "0.16.0"
+  val zioVersion    = "2.0.20"
+  val zioLogVersion = "2.1.16"
+
+  val logbackVersion      = "1.4.14"
+  val gcpBqVersion        = "2.35.0"
+  val gcpDpVersion        = "4.29.0"
+  val gcpGcsVersion       = "2.30.1"
+  val gcpPubSubVersion    = "1.125.13"
+  val cloudMonitorVersion = "3.33.0"
+  val batchVersion        = "0.32.0"
 }
