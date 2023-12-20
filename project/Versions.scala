@@ -7,8 +7,8 @@ object Versions {
 
   val scalaJavaCollectionCompat = "2.10.0"
 
-  val zioVersion    = "2.0.20"
-  val zioLogVersion = "2.1.16"
+  val zioVersion    = "2.0.13"
+  val zioLogVersion = "2.1.12"
 
   val logbackVersion      = "1.4.14"
   val gcpBqVersion        = "2.35.0"
