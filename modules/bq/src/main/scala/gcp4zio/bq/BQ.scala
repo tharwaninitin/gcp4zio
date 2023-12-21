@@ -230,5 +230,7 @@ object BQ {
     )
   )
 
+  def execute[T](f: BigQuery => T): RIO[BQ, T] = ZIO.environmentWithZIO(_.get.execute(f))
+
   def live(credentials: scala.Option[String] = None): TaskLayer[BQ] = ZLayer.fromZIO(BQClient(credentials).map(bq => BQImpl(bq)))
 }
