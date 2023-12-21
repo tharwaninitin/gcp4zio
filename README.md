@@ -21,11 +21,11 @@ This project is compiled with scala versions 2.12.18, 2.13.12, 3.3.1
 __SBT__
 ``` scala mdoc
 libraryDependencies ++= List(
-      "com.github.tharwaninitin" %% "gcp4zio-gcs" % "1.4.2",
-      "com.github.tharwaninitin" %% "gcp4zio-dp"  % "1.4.2",
-      "com.github.tharwaninitin" %% "gcp4zio-bq"  % "1.4.2",
-      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % "1.4.2",
-      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % "1.4.2"
+      "com.github.tharwaninitin" %% "gcp4zio-gcs" % "1.5.0",
+      "com.github.tharwaninitin" %% "gcp4zio-dp"  % "1.5.0",
+      "com.github.tharwaninitin" %% "gcp4zio-bq"  % "1.5.0",
+      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % "1.5.0",
+      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % "1.5.0"
    )
 ```
 __Maven__
@@ -33,7 +33,7 @@ __Maven__
 <dependency>
     <groupId>com.github.tharwaninitin</groupId>
     <artifactId>gcp4zio-gcs_2.12</artifactId>
-    <version>1.4.2</version>
+    <version>1.5.0</version>
 </dependency>
 ```
 # GCP4ZIO API's
