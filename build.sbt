@@ -5,8 +5,8 @@ import Versions._
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val commonSettings = Seq(
-  scalaVersion               := Scala212,
-  crossScalaVersions         := AllScalaVersions,
+  scalaVersion               := scala212,
+  crossScalaVersions         := allScalaVersions,
   dependencyUpdatesFailBuild := true,
   dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang"),
   scalacOptions ++= {
@@ -35,7 +35,7 @@ lazy val gcp4zio = (project in file("."))
     crossScalaVersions := Nil, // crossScalaVersions must be set to Nil on the aggregating project
     publish / skip     := true
   )
-  .aggregate(bq, dp, gcs, pubsub, monitoring)
+  .aggregate(bq, dp, gcs, pubsub, batch, monitoring)
 
 lazy val bq = (project in file("modules/bq"))
   .settings(commonSettings)
@@ -53,17 +53,30 @@ lazy val pubsub = (project in file("modules/pubsub"))
   .settings(commonSettings)
   .settings(name := "gcp4zio-pubsub", libraryDependencies ++= coreLibs ++ pubSubLibs ++ testLibs)
 
+lazy val batch = (project in file("modules/batch"))
+  .settings(commonSettings)
+  .settings(name := "gcp4zio-batch", libraryDependencies ++= coreLibs ++ batchLibs ++ testLibs)
+
 lazy val monitoring = (project in file("modules/monitoring"))
   .settings(commonSettings)
   .settings(name := "gcp4zio-monitoring", libraryDependencies ++= coreLibs ++ monitoringLibs ++ testLibs)
 
+lazy val examples = (project in file("examples"))
+  .settings(commonSettings)
+  .settings(
+    name           := "examples",
+    publish / skip := true,
+    libraryDependencies ++= List("ch.qos.logback" % "logback-classic" % logbackVersion)
+  )
+  .dependsOn(dp, gcs, pubsub, batch)
+
 lazy val docs = project
   .in(file("modules/docs")) // important: it must not be docs/
-  .dependsOn(bq, dp, gcs, pubsub, monitoring)
+  .dependsOn(bq, dp, gcs, pubsub, batch, monitoring)
   .settings(
     name           := "gcp4zio-docs",
     publish / skip := true,
-    mdocVariables  := Map("VERSION" -> version.value, "Scala212" -> Scala212, "Scala213" -> Scala213, "Scala3" -> Scala3),
+    mdocVariables  := Map("VERSION" -> version.value, "Scala212" -> scala212, "Scala213" -> scala213, "Scala3" -> scala3),
     mdocIn         := new File("docs/readme.template.md"),
     mdocOut        := new File("README.md")
   )

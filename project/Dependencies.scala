@@ -3,37 +3,41 @@ import sbt._
 
 object Dependencies {
 
-  lazy val coreLibs = List(
-    "dev.zio"                %% "zio"                     % ZioVersion,
-    "dev.zio"                %% "zio-streams"             % ZioVersion,
-    "org.scala-lang.modules" %% "scala-collection-compat" % ScalaJavaCollectionCompat,
-    "dev.zio"                %% "zio-logging-slf4j"       % ZioLogVersion
+  lazy val coreLibs: List[ModuleID] = List(
+    "dev.zio"                %% "zio"                     % zioVersion,
+    "dev.zio"                %% "zio-streams"             % zioVersion,
+    "org.scala-lang.modules" %% "scala-collection-compat" % scalaJavaCollectionCompat,
+    "dev.zio"                %% "zio-logging-slf4j"       % zioLogVersion
   )
 
-  lazy val bqLibs = List(
-    "com.google.cloud" % "google-cloud-bigquery" % GcpBqVersion
+  lazy val bqLibs: List[ModuleID] = List(
+    "com.google.cloud" % "google-cloud-bigquery" % gcpBqVersion
   )
 
-  lazy val dpLibs = List(
-    "com.google.cloud" % "google-cloud-dataproc" % GcpDpVersion
+  lazy val dpLibs: List[ModuleID] = List(
+    "com.google.cloud" % "google-cloud-dataproc" % gcpDpVersion
   )
 
-  lazy val gcsLibs = List(
-    "com.google.cloud" % "google-cloud-storage" % GcpGcsVersion
+  lazy val gcsLibs: List[ModuleID] = List(
+    "com.google.cloud" % "google-cloud-storage" % gcpGcsVersion
   )
 
-  lazy val pubSubLibs = List(
-    "com.google.cloud" % "google-cloud-pubsub" % GcpPubSubVersion
+  lazy val pubSubLibs: List[ModuleID] = List(
+    "com.google.cloud" % "google-cloud-pubsub" % gcpPubSubVersion
   )
 
-  lazy val monitoringLibs = List(
-    "com.google.cloud" % "google-cloud-monitoring" % CloudMonitorVersion
+  lazy val monitoringLibs: List[ModuleID] = List(
+    "com.google.cloud" % "google-cloud-monitoring" % cloudMonitorVersion
   )
 
-  lazy val testLibs = List(
-    "dev.zio"       %% "zio-test"        % ZioVersion,
-    "dev.zio"       %% "zio-test-sbt"    % ZioVersion,
-    "ch.qos.logback" % "logback-classic" % LogbackVersion
+  lazy val batchLibs: List[ModuleID] = List(
+    "com.google.cloud" % "google-cloud-batch" % batchVersion
+  )
+
+  lazy val testLibs: List[ModuleID] = List(
+    "dev.zio"       %% "zio-test"        % zioVersion,
+    "dev.zio"       %% "zio-test-sbt"    % zioVersion,
+    "ch.qos.logback" % "logback-classic" % logbackVersion
   ).map(_ % Test)
 
 }

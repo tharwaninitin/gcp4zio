@@ -24,7 +24,7 @@ object BQLoadExportTestSuite {
     },
     test("Run BQLoad CSV") {
       val schema: Option[Schema] = Encoder[RatingCSV]
-      val step = BQ.loadTable(inputFileCsv, CSV(), Some(gcpProject), outputDataset, outputTable, schema = schema)
+      val step                   = BQ.loadTable(inputFileCsv, CSV(), Some(gcpProject), outputDataset, outputTable, schema = schema)
       assertZIO(step.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     },
     test("Run BQExport CSV") {

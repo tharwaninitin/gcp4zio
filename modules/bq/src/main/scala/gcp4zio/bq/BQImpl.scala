@@ -55,6 +55,7 @@ case class BQImpl(client: BigQuery) extends BQ {
       throw new RuntimeException("Job no longer exists")
     else if (queryJob.getStatus.getError != null) {
       logger.error(queryJob.getStatus.getState.toString)
+      logger.info(s"EmailId: ${queryJob.getUserEmail}")
       throw new RuntimeException(s"Error ${queryJob.getStatus.getError.getMessage}")
     } else {
       logger.info(s"Executed query successfully")
@@ -253,4 +254,14 @@ case class BQImpl(client: BigQuery) extends BQ {
       )
     }
   }
+
+  /** Execute function with BigQuery as Input and return Generic o/p T
+    *
+    * @param f
+    *   BigQuery => T
+    * @tparam T
+    *   Output
+    * @return
+    */
+  override def execute[T](f: BigQuery => T): Task[T] = ZIO.attempt(f(client))
 }

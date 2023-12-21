@@ -16,16 +16,16 @@ Add the latest release as a dependency to your project
 | PubSub               | [![Latest Version](https://maven-badges.herokuapp.com/maven-central/com.github.tharwaninitin/gcp4zio-pubsub_2.12/badge.svg)](https://mvnrepository.com/artifact/com.github.tharwaninitin/gcp4zio-pubsub)         |         [![javadoc](https://javadoc.io/badge2/com.github.tharwaninitin/gcp4zio-pubsub_2.12/javadoc.svg)](https://javadoc.io/doc/com.github.tharwaninitin/gcp4zio-pubsub_2.12) | [![gcp4zio-pubsub Scala version support](https://index.scala-lang.org/tharwaninitin/gcp4zio/gcp4zio-pubsub/latest-by-scala-version.svg)](https://index.scala-lang.org/tharwaninitin/gcp4zio/gcp4zio-pubsub)             |
 | Cloud Monitoring     | [![Latest Version](https://maven-badges.herokuapp.com/maven-central/com.github.tharwaninitin/gcp4zio-monitoring_2.12/badge.svg)](https://mvnrepository.com/artifact/com.github.tharwaninitin/gcp4zio-monitoring) | [![javadoc](https://javadoc.io/badge2/com.github.tharwaninitin/gcp4zio-monitoring_2.12/javadoc.svg)](https://javadoc.io/doc/com.github.tharwaninitin/gcp4zio-monitoring_2.12) | [![gcp4zio-monitoring Scala version support](https://index.scala-lang.org/tharwaninitin/gcp4zio/gcp4zio-monitoring/latest-by-scala-version.svg)](https://index.scala-lang.org/tharwaninitin/gcp4zio/gcp4zio-monitoring) |
 
-This project is compiled with scala versions 2.12.17, 2.13.10, 3.2.1
+This project is compiled with scala versions 2.12.18, 2.13.12, 3.3.1
 
 __SBT__
 ``` scala mdoc
 libraryDependencies ++= List(
-      "com.github.tharwaninitin" %% "gcp4zio-gcs" % "1.4.1",
-      "com.github.tharwaninitin" %% "gcp4zio-dp"  % "1.4.1",
-      "com.github.tharwaninitin" %% "gcp4zio-bq"  % "1.4.1",
-      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % "1.4.1",
-      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % "1.4.1"
+      "com.github.tharwaninitin" %% "gcp4zio-gcs" % "1.5.0",
+      "com.github.tharwaninitin" %% "gcp4zio-dp"  % "1.5.0",
+      "com.github.tharwaninitin" %% "gcp4zio-bq"  % "1.5.0",
+      "com.github.tharwaninitin" %% "gcp4zio-pubsub"  % "1.5.0",
+      "com.github.tharwaninitin" %% "gcp4zio-monitoring"  % "1.5.0"
    )
 ```
 __Maven__
@@ -33,7 +33,7 @@ __Maven__
 <dependency>
     <groupId>com.github.tharwaninitin</groupId>
     <artifactId>gcp4zio-gcs_2.12</artifactId>
-    <version>1.4.1</version>
+    <version>1.5.0</version>
 </dependency>
 ```
 # GCP4ZIO API's
@@ -179,6 +179,9 @@ import gcp4zio.pubsub.topic._
 
 // Create PubSub Topic
 PSTopic.createTopic(project = "gcsProjectId", topic = "topicName")
+
+// Add IAM Policy Binding to existing Topic, where you grant basic pubsub role to a member  
+PSTopic.addIAMPolicyBindingToTopic(project = "gcsProjectId", topic = "topicName", member = "example@principalAccount.com", role = "roles/<IAM_Role>")
 
 // Delete PubSub Topic
 PSTopic.deleteTopic(project = "gcsProjectId", topic = "topicName")

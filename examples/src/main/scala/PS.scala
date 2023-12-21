@@ -3,13 +3,12 @@ import gcp4zio.pubsub.subscriber.PSSubscriber
 import gcp4zio.pubsub.subscription.PSSubscription
 import gcp4zio.pubsub.topic.PSTopic
 import zio._
-import zio.logging.backend.SLF4J
 import java.nio.charset.Charset
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-object PS extends ZIOAppDefault {
+object PS extends ZIOAppDefault with ApplicationLogger {
 
-  override val bootstrap = Runtime.removeDefaultLoggers >>> SLF4J.slf4j
+  override val bootstrap: ULayer[Unit] = zioSlf4jLogger
 
   lazy val gcsProject: String   = sys.env("GCS_PROJECT")
   lazy val subscription: String = sys.env("SUBSCRIPTION")

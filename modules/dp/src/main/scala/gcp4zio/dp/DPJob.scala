@@ -7,8 +7,7 @@ import java.time.Duration
 
 trait DPJob {
 
-  /** Submits a Spark Job in Dataproc Cluster. (This API will not wait for Job Completion, to wait for Job completion use
-    * [[trackJobProgress]])
+  /** Submits a Spark Job in Dataproc Cluster. (This API will not wait for Job Completion, to wait for Job completion use [[trackJobProgress]])
     * @param args
     *   command line arguments which will be passed to spark application
     * @param mainClass
@@ -21,8 +20,7 @@ trait DPJob {
     */
   def submitSparkJob(args: List[String], mainClass: String, libs: List[String], conf: Map[String, String]): Task[Job]
 
-  /** Submits a Hive Job in Dataproc Cluster. (This API will not wait for Job Completion, to wait for Job completion use
-    * [[trackJobProgress]])
+  /** Submits a Hive Job in Dataproc Cluster. (This API will not wait for Job Completion, to wait for Job completion use [[trackJobProgress]])
     * @param query
     *   Hive SQL query to run
     * @return
@@ -41,8 +39,7 @@ trait DPJob {
 
 object DPJob {
 
-  /** Submits a Spark Job in Dataproc Cluster. (This API will not wait for Job Completion, to wait for Job completion use
-    * [[trackJobProgress]])
+  /** Submits a Spark Job in Dataproc Cluster. (This API will not wait for Job Completion, to wait for Job completion use [[trackJobProgress]])
     * @param args
     *   command line arguments which will be passed to spark application
     * @param mainClass
@@ -81,16 +78,14 @@ object DPJob {
       _   <- ZIO.environmentWithZIO[DPJob](_.get.trackJobProgress(job, trackingInterval))
     } yield job
 
-  /** Submits a Hive Job in Dataproc Cluster. (This API will not wait for Job Completion, to wait for Job completion use
-    * [[trackJobProgress]])
+  /** Submits a Hive Job in Dataproc Cluster. (This API will not wait for Job Completion, to wait for Job completion use [[trackJobProgress]])
     * @param query
     *   Hive SQL query to run
     * @return
     */
   def submitHiveJob(query: String): RIO[DPJob, Job] = ZIO.environmentWithZIO(_.get.submitHiveJob(query))
 
-  /** Submits a Hive Job in Dataproc Cluster. (This API will not wait for Job Completion, to wait for Job completion use
-    * [[trackJobProgress]])
+  /** Submits a Hive Job in Dataproc Cluster and waits till Job Completion
     * @param query
     *   Hive SQL query to run
     * @param trackingInterval
