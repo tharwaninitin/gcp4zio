@@ -255,5 +255,13 @@ case class BQImpl(client: BigQuery) extends BQ {
     }
   }
 
+  /** Execute function with BigQuery as Input and return Generic o/p T
+    *
+    * @param f
+    *   BigQuery => T
+    * @tparam T
+    *   Output
+    * @return
+    */
   override def execute[T](f: BigQuery => T): Task[T] = ZIO.attempt(f(client))
 }

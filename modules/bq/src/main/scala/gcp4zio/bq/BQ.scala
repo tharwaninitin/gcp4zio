@@ -81,6 +81,14 @@ trait BQ {
       targetCompressionType: String = "gzip"
   ): Task[Unit]
 
+  /** Execute function with BigQuery as Input and return Generic o/p T
+    *
+    * @param f
+    *   BigQuery => T
+    * @tparam T
+    *   Output
+    * @return
+    */
   def execute[T](f: BigQuery => T): Task[T]
 }
 
@@ -230,6 +238,14 @@ object BQ {
     )
   )
 
+  /** Execute function with BigQuery as Input and return Generic o/p T
+    *
+    * @param f
+    *   BigQuery => T
+    * @tparam T
+    *   Output
+    * @return
+    */
   def execute[T](f: BigQuery => T): RIO[BQ, T] = ZIO.environmentWithZIO(_.get.execute(f))
 
   def live(credentials: scala.Option[String] = None): TaskLayer[BQ] = ZLayer.fromZIO(BQClient(credentials).map(bq => BQImpl(bq)))
