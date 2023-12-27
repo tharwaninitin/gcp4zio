@@ -15,5 +15,5 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: ${{ matrix.java-version }}
-      - name: Compile Example Modules
-        run: sbt ";project gcp4zio; +publishLocal ;project examples; +Test/compile"
+      - name: Publish Local
+        run: sbt "+publishLocal"
