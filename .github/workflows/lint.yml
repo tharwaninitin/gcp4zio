@@ -1,4 +1,4 @@
-name: Scala Code Linting Check
+name: Scala/Java Code Linting Check
 on: [push]
 jobs:
   scalafmt:
