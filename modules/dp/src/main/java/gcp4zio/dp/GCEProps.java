@@ -6,17 +6,17 @@ import java.util.Optional;
 /**
  * Represents the Immutable properties for a Dataproc cluster.
  */
-public record GCEClusterProps(
+public record GCEProps(
     boolean internalIpOnly,
     Optional<String> subnetUri,
     List<String> networkTags,
     Optional<String> serviceAccount) {
 
-    public GCEClusterProps(boolean internalIpOnly) {
+    public GCEProps(boolean internalIpOnly) {
         this(internalIpOnly, Optional.empty(), List.of(), Optional.empty());
     }
 
-    public GCEClusterProps(boolean internalIpOnly, Optional<String> subnetUri, Optional<String> serviceAccount) {
+    public GCEProps(boolean internalIpOnly, Optional<String> subnetUri, Optional<String> serviceAccount) {
         this(internalIpOnly, subnetUri, List.of(), serviceAccount);
     }
 }

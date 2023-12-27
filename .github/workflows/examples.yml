@@ -9,10 +9,11 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
       - name: Set up JDK
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v2
         with:
+          distribution: 'adopt'
           java-version: ${{ matrix.java-version }}
       - name: Compile Example Modules
         run: sbt ";project gcp4zio; +publishLocal ;project examples; +Test/compile"

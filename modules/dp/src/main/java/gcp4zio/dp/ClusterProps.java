@@ -10,16 +10,15 @@ public record ClusterProps(
     boolean singleNode,
     String imageVersion,
     Optional<Integer> idleDeletionDurationSecs,
-    GCEClusterProps gceClusterProps,
+    GCEProps gceClusterProps,
     InstanceProps masterInstanceProps,
     InstanceProps workerInstanceProps) {
 
     public ClusterProps(String bucketName, boolean singleNode, Optional<String> subnetUri, Optional<String> serviceAccount) {
-        this(bucketName, singleNode, "2.1-debian11", Optional.of(1800), new GCEClusterProps(false, subnetUri, serviceAccount), new InstanceProps(), new InstanceProps(2));
+        this(bucketName, singleNode, "2.1-debian11", Optional.of(1800), new GCEProps(false, subnetUri, serviceAccount), new InstanceProps(), new InstanceProps(2));
     }
 
     public ClusterProps(String bucketName) {
-        this(bucketName, true, "2.1-debian11", Optional.of(1800), new GCEClusterProps(false), new InstanceProps(), new InstanceProps(2));
-
+        this(bucketName, true, "2.1-debian11", Optional.of(1800), new GCEProps(false), new InstanceProps(), new InstanceProps(2));
     }
 }
