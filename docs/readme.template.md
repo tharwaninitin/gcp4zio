@@ -16,7 +16,7 @@ Add the latest release as a dependency to your project
 | PubSub               | [![Latest Version](https://maven-badges.herokuapp.com/maven-central/com.github.tharwaninitin/gcp4zio-pubsub_2.12/badge.svg)](https://mvnrepository.com/artifact/com.github.tharwaninitin/gcp4zio-pubsub)         |         [![javadoc](https://javadoc.io/badge2/com.github.tharwaninitin/gcp4zio-pubsub_3/javadoc.svg)](https://javadoc.io/doc/com.github.tharwaninitin/gcp4zio-pubsub_3) | [![gcp4zio-pubsub Scala version support](https://index.scala-lang.org/tharwaninitin/gcp4zio/gcp4zio-pubsub/latest-by-scala-version.svg)](https://index.scala-lang.org/tharwaninitin/gcp4zio/gcp4zio-pubsub)             |
 | Cloud Monitoring     | [![Latest Version](https://maven-badges.herokuapp.com/maven-central/com.github.tharwaninitin/gcp4zio-monitoring_2.12/badge.svg)](https://mvnrepository.com/artifact/com.github.tharwaninitin/gcp4zio-monitoring) | [![javadoc](https://javadoc.io/badge2/com.github.tharwaninitin/gcp4zio-monitoring_3/javadoc.svg)](https://javadoc.io/doc/com.github.tharwaninitin/gcp4zio-monitoring_3) | [![gcp4zio-monitoring Scala version support](https://index.scala-lang.org/tharwaninitin/gcp4zio/gcp4zio-monitoring/latest-by-scala-version.svg)](https://index.scala-lang.org/tharwaninitin/gcp4zio/gcp4zio-monitoring) |
 
-This project is compiled with scala versions @Scala212@, @Scala213@, @Scala3@
+This project is tested with scala versions @Scala212@, @Scala213@, @Scala3@ and java versions @JavaVersions@
 
 __SBT__
 ``` scala mdoc
@@ -130,7 +130,7 @@ val createTask = DPCluster.createDataproc("cluster1", props)
 // Delete Dataproc Cluster
 val deleteTask = DPCluster.deleteDataproc("dpCluster")
 
-(createTask *> deleteTask).provide(DPCluster.live("gcpProject", "gcpRegion", "dpEndpoint"))
+(createTask *> deleteTask).provide(DPCluster.live("gcpProject", "gcpRegion"))
 ```  
 
 ### Dataproc Job
