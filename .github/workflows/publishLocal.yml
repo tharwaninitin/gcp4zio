@@ -1,4 +1,4 @@
-name: Examples CI
+name: Publish Local CI
 on: [push]
 jobs:
   examples:
