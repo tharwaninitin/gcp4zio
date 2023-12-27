@@ -1,7 +1,7 @@
 name: Publish Local CI
 on: [push]
 jobs:
-  examples:
+  publishLocal:
     runs-on: ubuntu-latest
     strategy:
       matrix:
