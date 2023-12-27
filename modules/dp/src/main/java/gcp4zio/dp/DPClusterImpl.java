@@ -4,6 +4,7 @@ import com.google.api.gax.longrunning.OperationFuture;
 import com.google.cloud.dataproc.v1.*;
 import com.google.protobuf.Duration;
 
+import com.google.protobuf.Empty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,13 +28,13 @@ public class DPClusterImpl {
      * @return SoftwareConfig
      */
     private SoftwareConfig createSoftwareConfig(ClusterProps props) {
-        if (props.isSingleNode()) {
+        if (props.singleNode()) {
             return SoftwareConfig.newBuilder()
-                    .setImageVersion(props.getImageVersion())
+                    .setImageVersion(props.imageVersion())
                     .putProperties("dataproc:dataproc.allow.zero.workers", "true")
                     .build();
         } else {
-            return SoftwareConfig.newBuilder().setImageVersion(props.getImageVersion()).build();
+            return SoftwareConfig.newBuilder().setImageVersion(props.imageVersion()).build();
         }
     }
 
@@ -42,19 +43,17 @@ public class DPClusterImpl {
      * @param props ClusterProps
      * @return GceClusterConfig
      */
-    private GceClusterConfig createGCEClusterConfig(ClusterProps props) {
-        GceClusterConfig.Builder gceClusterBuilder = GceClusterConfig.newBuilder()
-                .setInternalIpOnly(props.isInternalIpOnly());
+    private GceClusterConfig createGCEClusterConfig(GCEClusterProps props) {
+        GceClusterConfig.Builder gceClusterBuilder = GceClusterConfig.newBuilder().setInternalIpOnly(props.internalIpOnly());
 
-        if (props.getSubnetUri().isPresent()) {
-            gceClusterBuilder.setSubnetworkUri(props.getSubnetUri().get())
-                    .addAllTags(props.getNetworkTags());
+        if (props.subnetUri().isPresent()) {
+            gceClusterBuilder.setSubnetworkUri(props.subnetUri().get()).addAllTags(props.networkTags());
         } else {
-            gceClusterBuilder.addAllTags(props.getNetworkTags());
+            gceClusterBuilder.addAllTags(props.networkTags());
         }
 
-        if (props.getServiceAccount().isPresent()) {
-            return gceClusterBuilder.setServiceAccount(props.getServiceAccount().get()).build();
+        if (props.serviceAccount().isPresent()) {
+            return gceClusterBuilder.setServiceAccount(props.serviceAccount().get()).build();
         } else {
             return gceClusterBuilder.addServiceAccountScopes("https://www.googleapis.com/auth/cloud-platform").build();
         }
@@ -67,12 +66,12 @@ public class DPClusterImpl {
      */
     private InstanceGroupConfig createGCEInstanceConfig(InstanceProps props) {
         DiskConfig diskConfig = DiskConfig.newBuilder()
-                .setBootDiskType(props.getBootDiskType())
-                .setBootDiskSizeGb(props.getBootDiskSizeGb())
+                .setBootDiskType(props.bootDiskType())
+                .setBootDiskSizeGb(props.bootDiskSizeGb())
                 .build();
         return InstanceGroupConfig.newBuilder()
-                .setMachineTypeUri(props.getMachineType())
-                .setNumInstances(props.getNumInstance())
+                .setMachineTypeUri(props.machineType())
+                .setNumInstances(props.numInstance())
                 .setDiskConfig(diskConfig)
                 .build();
     }
@@ -83,32 +82,32 @@ public class DPClusterImpl {
      * @return ClusterConfig
      */
     private ClusterConfig createClusterConfig(ClusterProps props) {
-        if (props.isSingleNode()) {
+        if (props.singleNode()) {
             logger.info("Creating single node cluster creation request");
         } else {
             logger.info("Creating multi node cluster creation request");
         }
 
         SoftwareConfig softwareConfig = createSoftwareConfig(props);
-        GceClusterConfig gceClusterConfig = createGCEClusterConfig(props);
-        InstanceGroupConfig masterConfig = createGCEInstanceConfig(props.getMasterInstanceProps());
+        GceClusterConfig gceClusterConfig = createGCEClusterConfig(props.gceClusterProps());
+        InstanceGroupConfig masterConfig = createGCEInstanceConfig(props.masterInstanceProps());
         EndpointConfig endPointConfig = EndpointConfig.newBuilder().setEnableHttpPortAccess(true).build();
 
         ClusterConfig.Builder clusterConfigBuilder = ClusterConfig.newBuilder()
                 .setMasterConfig(masterConfig)
                 .setSoftwareConfig(softwareConfig)
-                .setConfigBucket(props.getBucketName())
+                .setConfigBucket(props.bucketName())
                 .setGceClusterConfig(gceClusterConfig)
                 .setEndpointConfig(endPointConfig);
 
-        if (!props.isSingleNode()) {
-            InstanceGroupConfig workerConfig = createGCEInstanceConfig(props.getWorkerInstanceProps());
+        if (!props.singleNode()) {
+            InstanceGroupConfig workerConfig = createGCEInstanceConfig(props.workerInstanceProps());
             clusterConfigBuilder.setWorkerConfig(workerConfig);
         }
 
-        if (props.getIdleDeletionDurationSecs().isPresent()) {
+        if (props.idleDeletionDurationSecs().isPresent()) {
             return clusterConfigBuilder
-                    .setLifecycleConfig(LifecycleConfig.newBuilder().setIdleDeleteTtl(Duration.newBuilder().setSeconds(props.getIdleDeletionDurationSecs().get())))
+                    .setLifecycleConfig(LifecycleConfig.newBuilder().setIdleDeleteTtl(Duration.newBuilder().setSeconds(props.idleDeletionDurationSecs().get())))
                     .build();
         } else {
             return clusterConfigBuilder.build();
@@ -132,6 +131,16 @@ public class DPClusterImpl {
 
         logger.info("Submitting cluster creation request for {}", cluster);
         return client.createClusterAsync(project, region, clusterConf);
+    }
+
+    /** This public function deletes Dataproc Cluster
+     *
+     * @param cluster String
+     * @return OperationFuture<Cluster, ClusterOperationMetadata>
+     */
+    public OperationFuture<Empty, ClusterOperationMetadata> deleteDataproc(String cluster) {
+        logger.info("Submitting cluster deletion request for {}", cluster);
+        return client.deleteClusterAsync(project, region, cluster);
     }
 
 }

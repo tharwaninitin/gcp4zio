@@ -51,12 +51,11 @@ object DPCluster {
     *   GCP projectID
     * @param region
     *   GCP Region name
-    * @param endpoint
-    *   GCP dataproc API
     * @return
     */
-  def live(project: String, region: String, endpoint: String): TaskLayer[DPCluster] =
-    ZLayer.scoped(
+  def live(project: String, region: String): TaskLayer[DPCluster] =
+    ZLayer.scoped {
+      val endpoint = s"$region-dataproc.googleapis.com:443"
       DPClusterClient(endpoint).map(client =>
         new DPCluster {
 
@@ -70,10 +69,7 @@ object DPCluster {
             )
 
           override def deleteDataproc(cluster: String): Task[Unit] = ZIO
-            .fromFutureJava {
-              logger.info(s"Submitting cluster deletion request for $cluster")
-              client.deleteClusterAsync(project, region, cluster)
-            }
+            .fromFutureJava(dpClusterImpl.deleteDataproc(cluster))
             .tapBoth(
               e => ZIO.succeed(logger.error(s"Cluster deletion failed with error ${e.getMessage}")),
               _ => ZIO.succeed(logger.info(s"Cluster $cluster deleted successfully"))
@@ -81,5 +77,5 @@ object DPCluster {
             .unit
         }
       )
-    )
+    }
 }
