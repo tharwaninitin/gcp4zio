@@ -5,7 +5,7 @@ import Versions._
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val commonSettings = Seq(
-  scalaVersion               := scala212,
+  scalaVersion               := scala213,
   crossScalaVersions         := allScalaVersions,
   dependencyUpdatesFailBuild := true,
   compileOrder               := CompileOrder.JavaThenScala,
@@ -66,20 +66,20 @@ lazy val monitoring = (project in file("modules/monitoring"))
 
 lazy val examples = (project in file("examples"))
   .settings(commonSettings)
+  .dependsOn(dp, gcs, pubsub, batch)
   .settings(
     name           := "examples",
     publish / skip := true,
     libraryDependencies ++= List("ch.qos.logback" % "logback-classic" % logbackVersion)
   )
-  .dependsOn(dp, gcs, pubsub, batch)
 
-lazy val docs = project
-  .in(file("modules/docs")) // important: it must not be docs/
+lazy val docs = (project in file("modules/docs")) // important: it must not be docs/
+  .settings(commonSettings)
   .dependsOn(bq, dp, gcs, pubsub, batch, monitoring)
   .settings(
     name           := "gcp4zio-docs",
     publish / skip := true,
-    mdocVariables  := Map("VERSION" -> version.value, "Scala212" -> scala212, "Scala213" -> scala213, "Scala3" -> scala3, "JavaVersions" -> "17, 21"),
+    mdocVariables  := Map("VERSION" -> version.value, "SCALA213" -> scala213, "SCALA3" -> scala3, "JAVA" -> "17, 21"),
     mdocIn         := new File("docs/readme.template.md"),
     mdocOut        := new File("README.md")
   )

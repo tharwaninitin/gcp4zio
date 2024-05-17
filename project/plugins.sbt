@@ -5,7 +5,7 @@ addSbtPlugin("org.scalameta"     % "sbt-scalafmt"          % "2.4.6")
 addSbtPlugin("com.lightbend.sbt" % "sbt-java-formatter"    % "0.8.0")
 
 // Type Checked Documentation Plugin
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.3.6")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.5.2")
 
 // Publishing and Release Plugins
 addSbtPlugin("io.crashbox"    % "sbt-gpg"            % "0.2.1")
