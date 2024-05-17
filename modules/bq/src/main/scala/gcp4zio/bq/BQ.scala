@@ -3,6 +3,7 @@ package bq
 
 import com.google.cloud.bigquery._
 import zio.{RIO, Task, TaskLayer, ZIO, ZLayer}
+import zio.stream.Stream
 
 trait BQ {
 
@@ -23,6 +24,17 @@ trait BQ {
     * @return
     */
   def fetchResults[T](query: String)(fn: FieldValueList => T): Task[Iterable[T]]
+
+  /** This API can be used to run any SQL(SELECT) query on BigQuery to fetch rows
+    * @param query
+    *   SQL query(SELECT) to execute
+    * @param fn
+    *   function to convert FieldValueList to Scala Type T
+    * @tparam T
+    *   Scala Type for output rows
+    * @return
+    */
+  def fetchStreamingResults[T](query: String)(fn: FieldValueList => T): Task[Stream[Throwable, T]]
 
   /** Load data into BigQuery from GCS
     * @param sourcePath
@@ -112,6 +124,18 @@ object BQ {
     */
   def fetchResults[T](query: String)(fn: FieldValueList => T): RIO[BQ, Iterable[T]] =
     ZIO.environmentWithZIO(_.get.fetchResults[T](query)(fn))
+
+  /** This API can be used to run any SQL(SELECT) query on BigQuery to fetch rows
+    * @param query
+    *   SQL query(SELECT) to execute
+    * @param fn
+    *   function to convert FieldValueList to Scala Type T
+    * @tparam T
+    *   Scala Type for output rows
+    * @return
+    */
+  def fetchStreamingResults[T](query: String)(fn: FieldValueList => T): RIO[BQ, Stream[Throwable, T]] =
+    ZIO.environmentWithZIO(_.get.fetchStreamingResults[T](query)(fn))
 
   /** Load data into BigQuery from GCS
     * @param sourcePath
