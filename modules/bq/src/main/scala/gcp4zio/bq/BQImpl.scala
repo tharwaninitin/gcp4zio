@@ -6,6 +6,7 @@ import gcp4zio.bq.FileType.{CSV, JSON, ORC, PARQUET}
 import zio.{Task, ZIO}
 import java.util.UUID
 import scala.jdk.CollectionConverters._
+import zio.stream.{Stream, ZPipeline, ZStream}
 
 @SuppressWarnings(
   Array(
@@ -86,6 +87,36 @@ case class BQImpl(client: BigQuery) extends BQ {
 
     val result: TableResult = job.getQueryResults()
     result.iterateAll().asScala.map(fn)
+  }
+
+  /** This API can be used to run any SQL(SELECT) query on BigQuery to fetch rows
+    * @param query
+    *   SQL query(SELECT) to execute
+    * @param fn
+    *   function to convert FieldValueList to Scala Type T
+    * @tparam T
+    *   Scala Type for output rows
+    * @return
+    */
+  def fetchStreamingResults[T](query: String)(fn: FieldValueList => T): Task[Stream[Throwable, T]] = ZIO.attempt {
+    val queryConfig: QueryJobConfiguration = QueryJobConfiguration
+      .newBuilder(query)
+      .setUseLegacySql(false)
+      .build()
+
+    val jobId    = JobId.of(UUID.randomUUID().toString)
+    val queryJob = client.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build())
+
+    // Wait for the query to complete.
+    val job = queryJob.waitFor()
+
+    val fnTransformer: ZPipeline[Any, Nothing, FieldValueList, T] = ZPipeline.map(fn)
+
+    ZStream
+      .fromJavaStream(
+        job.getQueryResults().streamAll()
+      )
+      .via(fnTransformer)
   }
 
   /** Load data into BigQuery from GCS

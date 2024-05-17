@@ -23,6 +23,22 @@ object BQQueryTestSuite {
           )
         )
       assertZIO(task.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
+    },
+    test("Execute Streaming BQ Query ") {
+      val task = BQ.executeQuery("")
+      assertZIO(task.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
+    },
+    test("Execute StreamingBQ Query and get data") {
+      val task =
+        BQ.fetchStreamingResults("SELECT * FROM dev.ratings")(rs =>
+          Rating(
+            rs.get("userId").getLongValue,
+            rs.get("movieId").getLongValue,
+            rs.get("rating").getDoubleValue,
+            rs.get("timestamp").getLongValue
+          )
+        )
+      assertZIO(task.foldZIO(ex => ZIO.fail(ex.getMessage), _ => ZIO.succeed("ok")))(equalTo("ok"))
     }
   ) @@ TestAspect.sequential
 }

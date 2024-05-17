@@ -8,6 +8,9 @@ lazy val commonSettings = Seq(
   scalaVersion               := scala212,
   crossScalaVersions         := allScalaVersions,
   dependencyUpdatesFailBuild := true,
+  compileOrder               := CompileOrder.JavaThenScala,
+//  scalacOptions ++= Seq("-target:11"),
+//  scalacOptions ++= Seq("-release", "25"),
   dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang"),
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
@@ -35,7 +38,7 @@ lazy val gcp4zio = (project in file("."))
     crossScalaVersions := Nil, // crossScalaVersions must be set to Nil on the aggregating project
     publish / skip     := true
   )
-  .aggregate(bq, dp, gcs, pubsub, batch, monitoring)
+  .aggregate(bq, dp, gcs, pubsub, batch, monitoring, examples)
 
 lazy val bq = (project in file("modules/bq"))
   .settings(commonSettings)
@@ -76,7 +79,7 @@ lazy val docs = project
   .settings(
     name           := "gcp4zio-docs",
     publish / skip := true,
-    mdocVariables  := Map("VERSION" -> version.value, "Scala212" -> scala212, "Scala213" -> scala213, "Scala3" -> scala3),
+    mdocVariables  := Map("VERSION" -> version.value, "Scala212" -> scala212, "Scala213" -> scala213, "Scala3" -> scala3, "JavaVersions" -> "17, 21"),
     mdocIn         := new File("docs/readme.template.md"),
     mdocOut        := new File("README.md")
   )

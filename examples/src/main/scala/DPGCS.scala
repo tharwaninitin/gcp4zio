@@ -40,7 +40,7 @@ object DPGCS extends ZIOAppDefault with ApplicationLogger {
 
   private val mainClass = "org.apache.spark.examples.SparkPi"
 
-  private val createCluster = DPCluster.createDataproc(dpCluster, ClusterProps(dpBucket))
+  private val createCluster = DPCluster.createDataproc(dpCluster, new ClusterProps(dpBucket))
 
   private val program1 = DPJob
     .executeSparkJob(List("1000"), mainClass, libs, conf)
@@ -56,7 +56,7 @@ object DPGCS extends ZIOAppDefault with ApplicationLogger {
 
   private val dpJobLayer = DPJob.live(dpCluster, gcpProject, gcpRegion, dpEndpoint)
 
-  private val dpClusterLayer = DPCluster.live(gcpProject, gcpRegion, dpEndpoint)
+  private val dpClusterLayer = DPCluster.live(gcpProject, gcpRegion)
 
   val run: Task[Unit] =
     (createCluster *> program1 *> program2 *> deleteCluster).provide(dpJobLayer ++ dpClusterLayer ++ GCS.live())
