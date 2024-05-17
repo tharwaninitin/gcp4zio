@@ -1,23 +1,6 @@
 name: Publish Local CI
 on: [push]
 jobs:
-  publish212:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java-version: [ 21 ]
-      fail-fast: false
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'adopt'
-          java-version: ${{ matrix.java-version }}
-          cache: 'sbt'
-      - name: Publish Local for 2.12
-        run: sbt "++ 2.12.18 publishLocal"
   publish213:
     runs-on: ubuntu-latest
     strategy:
