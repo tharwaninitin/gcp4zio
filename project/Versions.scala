@@ -5,7 +5,7 @@ object Versions {
 
   val allScalaVersions: List[String] = List(scala213, scala3)
 
-  val scalaJavaCollectionCompat = "2.11.0"
+  val scalaJavaCollectionCompat = "2.12.0"
 
   val zioVersion    = "2.1.1"
   val zioLogVersion = "2.2.4"
