@@ -16,7 +16,7 @@ jobs:
           distribution: 'adopt'
           java-version: ${{ matrix.java-version }}
           cache: 'sbt'
-      - name: Publish Local for 2.13
+      - name: Publish Local for 2.12
         run: sbt "++ 2.12.18 publishLocal"
   publish213:
     runs-on: ubuntu-latest

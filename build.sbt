@@ -9,6 +9,8 @@ lazy val commonSettings = Seq(
   crossScalaVersions         := allScalaVersions,
   dependencyUpdatesFailBuild := true,
   compileOrder               := CompileOrder.JavaThenScala,
+//  scalacOptions ++= Seq("-target:11"),
+//  scalacOptions ++= Seq("-release", "25"),
   dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang"),
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
